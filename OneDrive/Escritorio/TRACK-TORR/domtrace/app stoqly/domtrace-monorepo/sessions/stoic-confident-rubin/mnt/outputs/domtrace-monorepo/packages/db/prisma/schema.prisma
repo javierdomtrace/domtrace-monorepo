@@ -1,0 +1,302 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ── ENUMS ────────────────────────────────────────────────────────────
+
+enum Tier {
+  FREE
+  HOGAR
+  EXPERTO
+  ENTERPRISE
+}
+
+enum HouseholdType {
+  HOME
+  ENTERPRISE
+  WAREHOUSE
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum TempType {
+  COLD
+  AMBIENT
+  FROZEN
+  WARM
+}
+
+enum ItemStatus {
+  OK
+  EXPIRING_SOON
+  EXPIRED
+  CONSUMED
+  DISCARDED
+}
+
+enum TagType {
+  NTAG213
+  NTAG215
+  NTAG216
+  NTAG424DNA
+  SLIX
+  SLIX2
+  DUAL_CARRIER
+}
+
+enum TagStatus {
+  UNREGISTERED
+  PENDING_WRITE
+  ACTIVE
+  REASSIGNING
+  LOCKED
+}
+
+enum DestinatarioTipo {
+  CONSUMER
+  ENTERPRISE
+  WAREHOUSE
+}
+
+enum ExpedicionEstado {
+  EXPEDIDA
+  EN_TRANSITO
+  ENTREGADA
+  INCIDENCIA
+}
+
+enum Action {
+  ITEM_ADDED
+  ITEM_CONSUMED
+  ITEM_DISCARDED
+  ITEM_MOVED
+  ITEM_EXPIRED
+  TAG_WRITTEN
+  TAG_SCANNED
+  TAG_REASSIGNED
+  ALBARAN_OPENED
+  ALBARAN_CONFIRMED
+  INCIDENCIA_REPORTED
+  EXPEDICION_CREATED
+  EXPEDICION_TRANSIT
+  EXPEDICION_DELIVERED
+}
+
+// ── USUARIOS Y AUTENTICACIÓN ─────────────────────────────────────────
+
+model User {
+  id                    String    @id @default(uuid())
+  email                 String    @unique
+  passwordHash          String?   // null si OAuth
+  name                  String
+  locale                String    @default("es-ES")
+  subscriptionTier      Tier      @default(FREE)
+  subscriptionExpiresAt DateTime?
+  stripeCustomerId      String?
+  pushToken             String?
+  allergens             String[]  // códigos de alérgeno: GLUTEN, LACTOSA, FRUTOS_SECOS...
+
+  // Accesibilidad
+  accessibilityMode     String    @default("VOICE") // VOICE | VIBRATION | SILENT | COMBINED
+  textSize              String    @default("NORMAL") // NORMAL | LARGE | XLARGE
+  highContrast          Boolean   @default(false)
+  reduceMotion          Boolean   @default(false)
+  voiceSpeed            String    @default("NORMAL") // SLOW | NORMAL | FAST
+
+  // Stoqly personalization
+  assistantName         String    @default("Stoqly")
+  humorEnabled          Boolean   @default(true)
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  households  HouseholdMember[]
+
+  @@map("users")
+}
+
+// ── HOGARES Y EMPRESAS ───────────────────────────────────────────────
+
+model Household {
+  id          String        @id @default(uuid())
+  name        String
+  ownerId     String
+  type        HouseholdType @default(HOME)
+  erpWebhook  String?       // URL webhook ERP para Enterprise
+  supermarket String?       // supermercado preferido: MERCADONA | CARREFOUR | LIDL | ...
+  createdAt   DateTime      @default(now())
+
+  members     HouseholdMember[]
+  zones       PantryZone[]
+  items       Item[]
+
+  @@map("households")
+}
+
+model HouseholdMember {
+  householdId String
+  userId      String
+  role        Role
+  joinedAt    DateTime @default(now())
+
+  household   Household @relation(fields: [householdId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@id([householdId, userId])
+  @@map("household_members")
+}
+
+// ── ZONAS DE DESPENSA ────────────────────────────────────────────────
+
+model PantryZone {
+  id            String    @id @default(uuid())
+  householdId   String
+  name          String
+  icon          String
+  temperatureType TempType
+  position      Int
+  createdAt     DateTime  @default(now())
+
+  household     Household @relation(fields: [householdId], references: [id])
+  items         Item[]
+
+  @@map("pantry_zones")
+}
+
+// ── ITEMS DE INVENTARIO ──────────────────────────────────────────────
+
+model Item {
+  id          String      @id @default(uuid())
+  householdId String
+  zoneId      String?
+  addedBy     String
+  name        String
+  barcode     String?     // EAN-13/EAN-8
+  epc         String?     // EPC del tag si viene de albarán
+  categoryId  String?
+  expiryDate  DateTime?
+  openedAt    DateTime?   // para cálculo PAO
+  paoMonths   Int?        // Period After Opening
+  quantity    Decimal     @default(1)
+  unit        String      @default("u")
+  status      ItemStatus  @default(OK)
+  price       Decimal?    // precio real pagado
+  allergens   String[]    // alérgenos detectados
+  notes       String?
+  imageUrl    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  household   Household   @relation(fields: [householdId], references: [id])
+  zone        PantryZone? @relation(fields: [zoneId], references: [id])
+  tags        Tag[]
+  movements   Movement[]
+
+  @@index([householdId])
+  @@index([expiryDate], where: "status NOT IN ('CONSUMED', 'DISCARDED')")
+  @@index([zoneId])
+  @@index([barcode])
+  @@index([epc])
+  @@map("items")
+}
+
+// ── ETIQUETAS NFC/RFID ───────────────────────────────────────────────
+
+model Tag {
+  id            String    @id // UID del chip: "04:AB:CD:..."
+  epc           String?   @unique
+  itemId        String?
+  householdId   String?
+  expedicionId  String?
+  tagType       TagType
+  status        TagStatus @default(UNREGISTERED)
+  registeredAt  DateTime?
+  lastScannedAt DateTime?
+  scanCount     Int       @default(0)
+
+  item          Item?       @relation(fields: [itemId], references: [id])
+  expedicion    Expedicion? @relation(fields: [expedicionId], references: [id])
+  movements     Movement[]
+
+  @@map("tags")
+}
+
+// ── EXPEDICIONES (TrackRFID / albarán) ──────────────────────────────
+
+model Expedicion {
+  id               String           @id @default(uuid())
+  epc              String           @unique
+  remitenteId      String
+  destinatarioTipo DestinatarioTipo
+  destinatarioRef  String?          // email, CIF o código almacén
+  estado           ExpedicionEstado @default(EXPEDIDA)
+  productoNombre   String
+  productoRef      String?
+  lote             String?
+  numeroPedido     String?
+  centroCosto      String?
+  departamento     String?
+  fechaExpedicion  DateTime         @default(now())
+  fechaEntrega     DateTime?
+  latEntrega       Float?
+  lngEntrega       Float?
+  createdAt        DateTime         @default(now())
+
+  tags             Tag[]
+  movements        Movement[]
+
+  @@index([remitenteId])
+  @@index([estado])
+  @@map("expediciones")
+}
+
+// ── MOVIMIENTOS (trazabilidad inmutable) ─────────────────────────────
+
+model Movement {
+  id           String      @id @default(uuid())
+  itemId       String?
+  expedicionId String?
+  tagId        String?
+  fromZoneId   String?
+  toZoneId     String?
+  action       Action
+  performedBy  String
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+
+  item         Item?       @relation(fields: [itemId], references: [id])
+  expedicion   Expedicion? @relation(fields: [expedicionId], references: [id])
+  tag          Tag?        @relation(fields: [tagId], references: [id])
+
+  @@index([itemId, createdAt(sort: Desc)])
+  @@index([expedicionId, createdAt(sort: Desc)])
+  @@map("movements")
+}
+
+// ── LISTA DE LA COMPRA ───────────────────────────────────────────────
+
+model ShoppingItem {
+  id          String   @id @default(uuid())
+  householdId String
+  name        String
+  quantity    Decimal  @default(1)
+  unit        String   @default("u")
+  supermarket String?
+  addedBy     String   // "stoqly" | userId
+  checked     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([householdId])
+  @@map("shopping_items")
+}
