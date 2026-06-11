@@ -11,8 +11,8 @@ const MODES: { id: A11yMode; icon: React.ElementType; label: string; desc: strin
 
 export function AccessibilityPanel() {
   const [open, setOpen] = useState(false)
-  const { highContrast, fontSize, reducedMotion, screenReaderHints, activeMode,
-    toggleHighContrast, setFontSize, toggleReducedMotion, toggleScreenReaderHints,
+  const { highContrast, fontSize, reducedMotion, screenReaderHints, voiceFeedback, activeMode,
+    toggleHighContrast, setFontSize, toggleReducedMotion, toggleScreenReaderHints, toggleVoiceFeedback,
     setMode, reset } = useA11y()
 
   return (
@@ -152,6 +152,15 @@ export function AccessibilityPanel() {
               label="Pistas para lector de pantalla"
               checked={screenReaderHints}
               onChange={toggleScreenReaderHints}
+              style={{ marginTop: 12 }}
+            />
+
+            {/* Lectura en voz alta */}
+            <Toggle
+              id="a11y-tts"
+              label="Lectura en voz alta"
+              checked={voiceFeedback}
+              onChange={toggleVoiceFeedback}
               style={{ marginTop: 12 }}
             />
           </fieldset>

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { ScanLine, Plus, Trash2, CheckCircle, RefreshCw, Package, Leaf, ChevronDown, ChevronUp, Camera } from 'lucide-react'
+import { useA11y } from '../store/accessibility'
+import { speak } from '../lib/tts'
 
 // ── Tipos ────────────────────────────────────────────────────────────
 
@@ -89,6 +91,7 @@ async function scanLabel(file: File): Promise<LabelScanResult | null> {
 
 export function ReceivePage() {
   const qc = useQueryClient()
+  const voiceFeedback = useA11y(s => s.voiceFeedback)
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [barcodeInput, setBarcodeInput] = useState('')
   const [nameInput, setNameInput] = useState('')
@@ -125,13 +128,15 @@ export function ReceivePage() {
       tempId, barcode: clean, name: `Buscando...`, quantity: 1, unit: 'u', action: 'new'
     }])
     const info = await lookupOFF(clean)
+    const finalName = info?.name ?? `Producto ${clean}`
     setQueue(q => q.map(item =>
       item.tempId === tempId
-        ? { ...item, name: info?.name ?? `Producto ${clean}`, imageUrl: info?.imageUrl }
+        ? { ...item, name: finalName, imageUrl: info?.imageUrl }
         : item
     ))
+    speak(info?.name ? `Producto detectado: ${finalName}` : `Código ${clean} no reconocido. Añadido como producto sin identificar.`, voiceFeedback)
     barcodeRef.current?.focus()
-  }, [])
+  }, [voiceFeedback])
 
   // ── Añadir por nombre manual ──────────────────────────────────────
   const addByName = useCallback(() => {
@@ -491,6 +496,7 @@ function QueueCard({ item, zones, expanded, onToggle, onUpdate, onRemove, onSave
 }) {
   const sug = item.suggestion
   const isFresco = sug?.isFresco
+  const voiceFeedback = useA11y(s => s.voiceFeedback)
   const ocrInputRef = useRef<HTMLInputElement>(null)
   const [ocrStatus, setOcrStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [ocrResult, setOcrResult] = useState<LabelScanResult | null>(null)
@@ -502,6 +508,7 @@ function QueueCard({ item, zones, expanded, onToggle, onUpdate, onRemove, onSave
     const result = await scanLabel(file)
     if (!result) {
       setOcrStatus('error')
+      speak('No se pudo analizar la foto de la etiqueta.', voiceFeedback)
       return
     }
     setOcrResult(result)
@@ -510,6 +517,20 @@ function QueueCard({ item, zones, expanded, onToggle, onUpdate, onRemove, onSave
     if (result.lotNumber) patch.lotNumber = result.lotNumber
     if (result.expiryDate && !isFresco) patch.expiryDate = result.expiryDate
     if (Object.keys(patch).length > 0) onUpdate(patch)
+
+    // Anunciar el resultado por voz (accesibilidad)
+    const partes: string[] = []
+    if (result.expiryDate && !isFresco) {
+      const [y, m, d] = result.expiryDate.split('-')
+      partes.push(`caducidad ${d}/${m}/${y}`)
+    }
+    if (result.lotNumber) partes.push(`lote ${result.lotNumber}`)
+    if (partes.length > 0) {
+      const aviso = result.confidence === 'baja' ? ' Revisa los datos, la confianza es baja.' : ''
+      speak(`Etiqueta analizada: ${partes.join(', ')}.${aviso}`, voiceFeedback)
+    } else {
+      speak('No se ha encontrado fecha de caducidad ni lote en la foto.', voiceFeedback)
+    }
   }
 
   const borderColor = item.removing
@@ -679,4 +700,103 @@ function QueueCard({ item, zones, expanded, onToggle, onUpdate, onRemove, onSave
               onChange={e => handleLabelPhoto(e.target.files?.[0])}
             />
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-     
+              <button
+                type="button"
+                onClick={() => ocrInputRef.current?.click()}
+                disabled={ocrStatus === 'loading'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px',
+                  borderRadius: 8, border: '1px solid var(--border)', background: 'transparent',
+                  color: 'var(--muted)', fontSize: 12, fontWeight: 600,
+                  cursor: ocrStatus === 'loading' ? 'default' : 'pointer',
+                }}
+              >
+                {ocrStatus === 'loading'
+                  ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Analizando...</>
+                  : <><Camera size={13} /> Escanear etiqueta</>}
+              </button>
+              {ocrStatus === 'done' && ocrResult && (
+                <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                  {ocrResult.expiryDate || ocrResult.lotNumber
+                    ? `✅ Detectado${ocrResult.confidence === 'baja' ? ' (revisa los datos)' : ''}`
+                    : 'Sin datos legibles en la foto'}
+                </span>
+              )}
+              {ocrStatus === 'error' && (
+                <span style={{ fontSize: 11, color: '#E0735C' }}>No se pudo analizar la foto</span>
+              )}
+            </div>
+            {ocrResult?.notes && (
+              <div style={{ marginTop: 4, fontSize: 11, color: 'var(--muted)', fontStyle: 'italic' }}>
+                💬 {ocrResult.notes}
+              </div>
+            )}
+          </div>
+
+          {/* Lote (opcional, editable) */}
+          <div style={{ marginTop: 10 }}>
+            <label style={lbl}>Lote (opcional)</label>
+            <input
+              type="text"
+              value={item.lotNumber ?? ''}
+              onChange={e => onUpdate({ lotNumber: e.target.value })}
+              placeholder="Ej: L240612A"
+              style={{ ...inp, marginBottom: 0 }}
+            />
+          </div>
+
+          {/* Acción si hay consolidación */}
+          {sug?.consolidarCon && (
+            <div style={{ marginTop: 10 }}>
+              <label style={lbl}>¿Qué hacer? Ya tienes <strong>{sug.consolidarCon}</strong></label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => onUpdate({ action: 'consolidate' })}
+                  style={{
+                    flex: 1, padding: '8px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+                    border: item.action === 'consolidate' ? '1px solid #EF9F27' : '1px solid var(--border)',
+                    background: item.action === 'consolidate' ? 'rgba(239,159,39,0.1)' : 'transparent',
+                    color: item.action === 'consolidate' ? '#EF9F27' : 'var(--muted)',
+                    fontWeight: 600,
+                  }}
+                >
+                  📦 Añadir al existente
+                </button>
+                <button
+                  onClick={() => onUpdate({ action: 'new' })}
+                  style={{
+                    flex: 1, padding: '8px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+                    border: item.action === 'new' ? '1px solid var(--teal)' : '1px solid var(--border)',
+                    background: item.action === 'new' ? 'rgba(78,205,196,0.1)' : 'transparent',
+                    color: item.action === 'new' ? 'var(--teal)' : 'var(--muted)',
+                    fontWeight: 600,
+                  }}
+                >
+                  ➕ Entrada nueva
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Tip de Stoqly */}
+          {sug?.stoqlyTip && (
+            <div style={{ marginTop: 10, fontSize: 12, color: 'var(--muted)', fontStyle: 'italic' }}>
+              💬 {sug.stoqlyTip}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const lbl: React.CSSProperties = { display: 'block', fontSize: 11, color: 'var(--muted)', marginBottom: 5, fontWeight: 500 }
+const inp: React.CSSProperties = {
+  width: '100%', padding: '9px 11px', background: 'var(--bg)',
+  border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)',
+  fontSize: 13, boxSizing: 'border-box', outline: 'none',
+}
+const btnSmall: React.CSSProperties = {
+  padding: '0 14px', background: 'var(--teal)', color: '#0F0F1A',
+  border: 'none', borderRadius: 8, fontSize: 18, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+}

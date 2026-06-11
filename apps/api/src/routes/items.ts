@@ -357,4 +357,6 @@ export const itemRoutes: FastifyPluginAsync = async (app) => {
       }),
     ])
 
-    return reply.send({ data: { total, expiringSoon, expired, pendienteDonacion, zo
+    return reply.send({ data: { total, expiringSoon, expired, pendienteDonacion, zones: zones.map(z => ({ ...z, itemCount: z._count.items })) } })
+  })
+}

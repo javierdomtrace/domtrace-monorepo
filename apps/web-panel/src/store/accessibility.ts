@@ -12,6 +12,8 @@ interface AccessibilityStore {
   reducedMotion: boolean
   // Screen reader
   screenReaderHints: boolean
+  // Voz
+  voiceFeedback: boolean
   // Profiles
   activeMode: A11yMode
   // Actions
@@ -19,6 +21,7 @@ interface AccessibilityStore {
   setFontSize: (size: FontSize) => void
   toggleReducedMotion: () => void
   toggleScreenReaderHints: () => void
+  toggleVoiceFeedback: () => void
   setMode: (mode: A11yMode) => void
   reset: () => void
 }
@@ -28,6 +31,7 @@ const defaults = {
   fontSize: 'normal' as FontSize,
   reducedMotion: false,
   screenReaderHints: false,
+  voiceFeedback: false,
   activeMode: 'none' as A11yMode,
 }
 
@@ -39,10 +43,11 @@ export const useA11y = create<AccessibilityStore>()(
       setFontSize: (fontSize) => set({ fontSize }),
       toggleReducedMotion: () => set(s => ({ reducedMotion: !s.reducedMotion })),
       toggleScreenReaderHints: () => set(s => ({ screenReaderHints: !s.screenReaderHints })),
+      toggleVoiceFeedback: () => set(s => ({ voiceFeedback: !s.voiceFeedback })),
       setMode: (mode) => {
         // Presets per mode
-        if (mode === 'visual')    set({ activeMode: mode, highContrast: true, fontSize: 'xlarge', screenReaderHints: true })
-        else if (mode === 'motor')     set({ activeMode: mode, reducedMotion: true, fontSize: 'large' })
+        if (mode === 'visual')    set({ activeMode: mode, highContrast: true, fontSize: 'xlarge', screenReaderHints: true, voiceFeedback: true })
+        else if (mode === 'motor')     set({ activeMode: mode, reducedMotion: true, fontSize: 'large', voiceFeedback: true })
         else if (mode === 'cognitive') set({ activeMode: mode, fontSize: 'large', reducedMotion: true })
         else if (mode === 'deaf')      set({ activeMode: mode, screenReaderHints: false })
         else                           set({ activeMode: 'none' })
