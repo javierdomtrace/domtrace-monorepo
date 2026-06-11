@@ -1,7 +1,7 @@
 # Dockerfile del panel web (Vite + React) — build context: raíz del monorepo
 #
 #   docker build -f apps/web-panel/Dockerfile \
-#     --build-arg VITE_API_URL=https://api.track-torr.com/v1 \
+#     --build-arg VITE_API_URL=https://api.stoqlyhome.com/v1 \
 #     -t stoqly-web-panel .
 #
 FROM node:20-alpine AS builder

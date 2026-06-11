@@ -3,9 +3,9 @@
 # Despliegue de Stoqly en el VPS de Arsys (Ubuntu 24.04)
 #
 # Uso:
-#   1. Asegúrate de que los registros DNS A de api.track-torr.com y
-#      app.track-torr.com apuntan ya a la IP de esta VPS (y han
-#      propagado — puedes comprobarlo con: dig +short api.track-torr.com)
+#   1. Asegúrate de que los registros DNS A de api.stoqlyhome.com y
+#      app.stoqlyhome.com apuntan ya a la IP de esta VPS (y han
+#      propagado — puedes comprobarlo con: dig +short api.stoqlyhome.com)
 #   2. Copia este script a la VPS y ejecútalo como root:
 #        scp infra/deploy-arsys.sh root@<IP_VPS>:/root/
 #        ssh root@<IP_VPS>
@@ -73,18 +73,18 @@ fi
 
 echo "=== 8. Nginx (host) + SSL ==="
 cd "$REPO_DIR"
-cp infra/nginx/api.track-torr.com.conf /etc/nginx/sites-available/
-cp infra/nginx/app.track-torr.com.conf /etc/nginx/sites-available/
-ln -sf /etc/nginx/sites-available/api.track-torr.com.conf /etc/nginx/sites-enabled/
-ln -sf /etc/nginx/sites-available/app.track-torr.com.conf /etc/nginx/sites-enabled/
+cp infra/nginx/api.stoqlyhome.com.conf /etc/nginx/sites-available/
+cp infra/nginx/app.stoqlyhome.com.conf /etc/nginx/sites-available/
+ln -sf /etc/nginx/sites-available/api.stoqlyhome.com.conf /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/app.stoqlyhome.com.conf /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 
-certbot --nginx -d api.track-torr.com -d app.track-torr.com
+certbot --nginx -d api.stoqlyhome.com -d app.stoqlyhome.com
 
 echo "=== 9. Verificación ==="
 sleep 2
-curl -sf https://api.track-torr.com/health && echo " -> API OK" || echo " -> API no responde todavía"
-echo "Abre https://app.track-torr.com en el navegador para probar el panel."
+curl -sf https://api.stoqlyhome.com/health && echo " -> API OK" || echo " -> API no responde todavía"
+echo "Abre https://app.stoqlyhome.com en el navegador para probar el panel."
 
 echo "=== 10. Backups diarios (opcional pero recomendado) ==="
 mkdir -p /srv/backups

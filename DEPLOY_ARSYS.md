@@ -3,11 +3,11 @@
 Guía paso a paso para una primera "prueba real" en la nube. Cubre API (Fastify),
 PostgreSQL, Redis y panel web (Vite). El albarán (Next.js) se añade más adelante
 cuando esté implementado — ya está preparado el hueco en `docker-compose.prod.yml`
-y en `infra/nginx/albaran.track-torr.com.conf.future`.
+y en `infra/nginx/albaran.stoqlyhome.com.conf.future`.
 
 ## 0. DNS (hacerlo ya, tarda en propagar)
 
-En el panel DNS de `track-torr.com`, añade dos registros A apuntando a la IP
+En el panel DNS de `stoqlyhome.com`, añade dos registros A apuntando a la IP
 pública de la VPS (no toques los registros de correo existentes — MX/SPF/DKIM
 son independientes):
 
@@ -71,8 +71,8 @@ Rellenar como mínimo:
 - `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` (live si vais a cobrar)
 - `R2_*`, `RESEND_API_KEY`, `ANTHROPIC_API_KEY`, `ELEVENLABS_*` — copiar de
   `apps/api/.env` local
-- `BASE_URL=https://api.track-torr.com`
-- `VITE_API_URL=https://api.track-torr.com/v1`
+- `BASE_URL=https://api.stoqlyhome.com`
+- `VITE_API_URL=https://api.stoqlyhome.com/v1`
 
 **Importante**: nunca subir `.env.production` a git (ya está cubierto por
 `.gitignore` vía `.env*`).
@@ -108,13 +108,13 @@ usuario semilla.
 ## 9. Configurar Nginx (host) + SSL
 
 ```bash
-cp infra/nginx/api.track-torr.com.conf /etc/nginx/sites-available/
-cp infra/nginx/app.track-torr.com.conf /etc/nginx/sites-available/
-ln -s /etc/nginx/sites-available/api.track-torr.com.conf /etc/nginx/sites-enabled/
-ln -s /etc/nginx/sites-available/app.track-torr.com.conf /etc/nginx/sites-enabled/
+cp infra/nginx/api.stoqlyhome.com.conf /etc/nginx/sites-available/
+cp infra/nginx/app.stoqlyhome.com.conf /etc/nginx/sites-available/
+ln -s /etc/nginx/sites-available/api.stoqlyhome.com.conf /etc/nginx/sites-enabled/
+ln -s /etc/nginx/sites-available/app.stoqlyhome.com.conf /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 
-certbot --nginx -d api.track-torr.com -d app.track-torr.com
+certbot --nginx -d api.stoqlyhome.com -d app.stoqlyhome.com
 ```
 
 Certbot edita automáticamente las configs para servir HTTPS y configura la
@@ -123,10 +123,10 @@ renovación automática (cron/systemd timer ya viene incluido con el paquete).
 ## 10. Verificación
 
 ```bash
-curl https://api.track-torr.com/health
+curl https://api.stoqlyhome.com/health
 ```
 
-Y abrir `https://app.track-torr.com` en el navegador — debería cargar el
+Y abrir `https://app.stoqlyhome.com` en el navegador — debería cargar el
 panel y poder hacer login con jtorres@cogelo.es / password123 (si ejecutaste
 el seed).
 
@@ -135,7 +135,7 @@ el seed).
 En `apps/mobile/.env`:
 
 ```
-EXPO_PUBLIC_API_URL=https://api.track-torr.com/v1
+EXPO_PUBLIC_API_URL=https://api.stoqlyhome.com/v1
 ```
 
 A partir de aquí, la implementación de voz en Expo (TTS/STT, ver memoria

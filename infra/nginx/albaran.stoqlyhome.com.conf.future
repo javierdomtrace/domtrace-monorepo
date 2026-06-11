@@ -1,10 +1,10 @@
 # Nginx — reverse proxy para el albarán (Next.js, contenedor Docker en :3001)
-# Renombrar a "albaran.track-torr.com.conf" cuando apps/web-albaran esté implementada
+# Renombrar a "albaran.stoqlyhome.com.conf" cuando apps/web-albaran esté implementada
 # y el servicio web-albaran esté descomentado en docker-compose.prod.yml
 #
 server {
     listen 80;
-    server_name albaran.track-torr.com;
+    server_name albaran.stoqlyhome.com;
 
     location / {
         proxy_pass http://127.0.0.1:3001;
