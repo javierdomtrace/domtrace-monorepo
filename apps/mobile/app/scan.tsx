@@ -1,0 +1,214 @@
+import { useState } from 'react'
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, TextInput, StyleSheet } from 'react-native'
+import { CameraView, useCameraPermissions } from 'expo-camera'
+import { useRouter } from 'expo-router'
+import * as Haptics from 'expo-haptics'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { api } from '@/lib/api'
+import { theme } from '@/theme'
+
+interface OFFProduct { product_name?: string; brands?: string; allergens_tags?: string[] }
+
+export default function ScanScreen() {
+  const router = useRouter()
+  const qc = useQueryClient()
+  const [permission, requestPermission] = useCameraPermissions()
+  const [scanned, setScanned] = useState(false)
+  const [lookingUp, setLookingUp] = useState(false)
+  const [manualEan, setManualEan] = useState('')
+  const [showManual, setShowManual] = useState(false)
+
+  const add = useMutation({
+    mutationFn: (body: { name: string; quantity: number; unit: string; allergens?: string[] }) =>
+      api.post('/items', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pantry-summary'] })
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      Alert.alert('✓ Añadido', 'Producto añadido a la despensa', [
+        { text: 'Seguir escaneando', onPress: () => setScanned(false) },
+        { text: 'Ir a despensa', onPress: () => router.replace('/(tabs)') },
+      ])
+    },
+  })
+
+  const lookupAndAdd = async (barcode: string) => {
+    setLookingUp(true)
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`)
+      const json = await res.json()
+      const p: OFFProduct = json.product ?? {}
+      const name = p.product_name || p.brands || `Producto ${barcode}`
+      const allergens = (p.allergens_tags ?? []).map((a: string) => a.replace('en:', '').toUpperCase())
+
+      Alert.alert(
+        name,
+        allergens.length > 0 ? `Alérgenos: ${allergens.join(', ')}` : 'Sin alérgenos detectados',
+        [
+          { text: 'Cancelar', style: 'cancel', onPress: () => setScanned(false) },
+          { text: 'Añadir a despensa', onPress: () => add.mutate({ name, quantity: 1, unit: 'u', allergens }) },
+        ]
+      )
+    } catch {
+      Alert.alert(
+        'Producto no encontrado',
+        `EAN: ${barcode}\n¿Cómo se llama este producto?`,
+        [
+          { text: 'Cancelar', style: 'cancel', onPress: () => setScanned(false) },
+          { text: 'Añadir', onPress: () => { setShowManual(true); setManualEan(barcode) } },
+        ]
+      )
+    } finally { setLookingUp(false) }
+  }
+
+  const handleBarcode = ({ data }: { data: string }) => {
+    if (scanned || lookingUp) return
+    setScanned(true)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    lookupAndAdd(data)
+  }
+
+  if (!permission) return <View style={styles.screen} />
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.permissionScreen}>
+        <Text style={{ fontSize: 40, marginBottom: 16 }}>📷</Text>
+        <Text style={styles.permTitle}>Necesito la cámara</Text>
+        <Text style={styles.permSub}>Para escanear códigos de barras de tus productos</Text>
+        <TouchableOpacity onPress={requestPermission} style={styles.permBtn}>
+          <Text style={styles.permBtnText}>Dar permiso</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
+  if (showManual) {
+    return (
+      <ManualEntry
+        ean={manualEan}
+        onAdd={(name) => { setShowManual(false); add.mutate({ name, quantity: 1, unit: 'u' }) }}
+        onCancel={() => { setShowManual(false); setScanned(false) }}
+      />
+    )
+  }
+
+  return (
+    <View style={styles.cameraScreen}>
+      <CameraView
+        style={StyleSheet.absoluteFill}
+        facing="back"
+        barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'code128', 'qr'] }}
+        onBarcodeScanned={handleBarcode}
+      />
+
+      {/* Overlay */}
+      <View style={StyleSheet.absoluteFill}>
+        <View style={styles.overlayTop} />
+        <View style={styles.overlayBottom} />
+        <View style={[styles.overlaySide, { left: 0 }]} />
+        <View style={[styles.overlaySide, { right: 0 }]} />
+
+        {/* Viewfinder */}
+        <View style={styles.viewfinderWrap}>
+          <View style={styles.viewfinder}>
+            {[
+              { top: -2, left: -2, borderTopWidth: 4, borderLeftWidth: 4 },
+              { top: -2, right: -2, borderTopWidth: 4, borderRightWidth: 4 },
+              { bottom: -2, left: -2, borderBottomWidth: 4, borderLeftWidth: 4 },
+              { bottom: -2, right: -2, borderBottomWidth: 4, borderRightWidth: 4 },
+            ].map((s, i) => (
+              <View key={i} style={[styles.corner, s as any]} />
+            ))}
+          </View>
+        </View>
+      </View>
+
+      {/* Top bar */}
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+          <Text style={styles.closeBtnText}>✕</Text>
+        </TouchableOpacity>
+        <Text style={styles.topBarTitle}>Escanear producto</Text>
+        <TouchableOpacity onPress={() => setShowManual(true)} style={styles.manualBtn}>
+          <Text style={styles.manualBtnText}>Manual</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom hint */}
+      <View style={styles.bottomHint}>
+        {lookingUp ? (
+          <View style={styles.lookingUp}>
+            <ActivityIndicator color={theme.brand} size="small" />
+            <Text style={styles.lookingUpText}>Buscando producto...</Text>
+          </View>
+        ) : (
+          <Text style={styles.hintText}>Apunta al código de barras</Text>
+        )}
+      </View>
+    </View>
+  )
+}
+
+function ManualEntry({ ean, onAdd, onCancel }: { ean: string; onAdd: (name: string) => void; onCancel: () => void }) {
+  const [name, setName] = useState('')
+  return (
+    <View style={styles.manualScreen}>
+      <Text style={styles.manualTitle}>Añadir producto</Text>
+      {ean ? <Text style={styles.manualEan}>EAN: {ean} — no encontrado en base de datos</Text> : null}
+      <Text style={styles.manualLabel}>Nombre del producto</Text>
+      <TextInput
+        style={styles.manualInput}
+        placeholder="Ej: Vino Rioja 2021" placeholderTextColor={theme.muted}
+        autoFocus value={name} onChangeText={setName}
+        returnKeyType="done" onSubmitEditing={() => name && onAdd(name)}
+      />
+      <View style={styles.manualButtons}>
+        <TouchableOpacity onPress={onCancel} style={styles.cancelBtn}>
+          <Text style={styles.cancelBtnText}>Cancelar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => name && onAdd(name)} disabled={!name}
+          style={[styles.confirmBtn, { opacity: name ? 1 : 0.4 }]}>
+          <Text style={styles.confirmBtnText}>Añadir →</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+}
+
+const OVERLAY_COLOR = 'rgba(0,0,0,0.55)'
+
+const styles = StyleSheet.create({
+  screen:         { flex: 1, backgroundColor: theme.bg },
+  permissionScreen: { flex: 1, backgroundColor: theme.bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  permTitle:      { color: theme.text, fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  permSub:        { color: theme.muted, fontSize: 14, textAlign: 'center', marginBottom: 24 },
+  permBtn:        { backgroundColor: theme.brand, borderRadius: 16, paddingHorizontal: 24, paddingVertical: 12 },
+  permBtnText:    { color: '#fff', fontWeight: '700' },
+  cameraScreen:   { flex: 1, backgroundColor: '#000' },
+  overlayTop:     { position: 'absolute', top: 0, left: 0, right: 0, height: '30%', backgroundColor: OVERLAY_COLOR },
+  overlayBottom:  { position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%', backgroundColor: OVERLAY_COLOR },
+  overlaySide:    { position: 'absolute', top: '30%', bottom: '35%', width: '10%', backgroundColor: OVERLAY_COLOR },
+  viewfinderWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  viewfinder:     { width: '80%', aspectRatio: 1.8, borderWidth: 2, borderColor: theme.brand, borderRadius: 16 },
+  corner:         { position: 'absolute', width: 24, height: 24, borderColor: theme.brand, borderRadius: 2 },
+  topBar:         { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 56, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  closeBtn:       { width: 40, height: 40, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  closeBtnText:   { color: '#fff', fontSize: 18 },
+  topBarTitle:    { color: '#fff', fontWeight: '700', fontSize: 16 },
+  manualBtn:      { backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
+  manualBtnText:  { color: '#fff', fontSize: 12, fontWeight: '600' },
+  bottomHint:     { position: 'absolute', bottom: 40, left: 0, right: 0, alignItems: 'center' },
+  lookingUp:      { backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, paddingHorizontal: 24, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  lookingUpText:  { color: '#fff', fontSize: 14 },
+  hintText:       { color: 'rgba(255,255,255,0.7)', fontSize: 14 },
+  manualScreen:   { flex: 1, backgroundColor: theme.bg, paddingHorizontal: 24, justifyContent: 'center' },
+  manualTitle:    { color: theme.text, fontSize: 20, fontWeight: '700', marginBottom: 8 },
+  manualEan:      { color: theme.muted, fontSize: 14, marginBottom: 24 },
+  manualLabel:    { color: theme.muted, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 },
+  manualInput:    { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, fontSize: 16, marginBottom: 24 },
+  manualButtons:  { flexDirection: 'row', gap: 12 },
+  cancelBtn:      { flex: 1, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
+  cancelBtnText:  { color: theme.muted, fontWeight: '600' },
+  confirmBtn:     { flex: 2, backgroundColor: theme.brand, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
+  confirmBtnText: { color: '#fff', fontWeight: '700' },
+})

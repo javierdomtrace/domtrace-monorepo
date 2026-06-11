@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Stoqly",
+    "slug": "stoqly",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.stoqly.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Stoqly necesita la cámara para escanear códigos de barras de tus productos."
+      }
+    },
+    "android": {
+      "package": "com.stoqly.app",
+      "permissions": [
+        "CAMERA",
+        "VIBRATE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-camera"
+    ],
+    "scheme": "stoqly",
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "apiUrl": "http://192.168.1.44:3000/v1",
+      "eas": {
+        "projectId": "ed45b39d-e8a4-48b0-8380-de7090779444"
+      },
+      "router": {}
+    },
+    "owner": "atoqly"
+  }
+}
