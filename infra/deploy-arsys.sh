@@ -41,9 +41,9 @@ systemctl enable --now nginx
 echo "=== 4. Clonar/actualizar repo ==="
 mkdir -p /srv
 if [ ! -d "$REPO_DIR" ]; then
-  git clone "$REPO_URL" "$REPO_DIR"
+  git clone -b master "$REPO_URL" "$REPO_DIR"
 else
-  cd "$REPO_DIR" && git pull
+  cd "$REPO_DIR" && git checkout master && git pull origin master
 fi
 cd "$REPO_DIR"
 
@@ -93,4 +93,4 @@ CRON_LINE='0 3 * * * docker compose -f /srv/domtrace-monorepo/infra/docker-compo
 
 echo ""
 echo "=== Despliegue completado ==="
-echo "Para futuras actualizaciones: cd $REPO_DIR && git pull && cd infra && docker compose -f docker-compose.prod.yml --env-file ../.env.production up -d --build && docker compose -f docker-compose.prod.yml exec -T api pnpm --filter @domtrace/db migrate:deploy"
+echo "Para futuras actualizaciones: cd $REPO_DIR && git pull && cd infra && docker compose -f docker-compose.prod.yml --env-file ../.env.production up -d --build && docker compose -f docker-compose.prod.yml exec -T 
