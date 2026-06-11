@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -449,8 +450,4 @@ model ShoppingItem {
   supermarket String?
   addedBy     String   // "stoqly" | userId
   checked     Boolean  @default(false)
-  createdAt   DateTime @default(now())
-
-  @@index([householdId])
-  @@map("shopping_items")
-}
+  createdAt   DateTime @default
