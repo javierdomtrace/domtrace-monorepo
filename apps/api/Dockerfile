@@ -12,7 +12,6 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @domtrace/db generate
-RUN pnpm --filter api build
 
 # ── Runtime ───────────────────────────────────────────────────────────
 FROM node:20-alpine
@@ -24,4 +23,4 @@ ENV NODE_ENV=production
 COPY --from=builder /app /app
 
 EXPOSE 3000
-CMD ["node", "apps/api/dist/index.js"]
+CMD ["node", "node_modules/tsx/dist/cli.mjs", "apps/api/src/index.t
