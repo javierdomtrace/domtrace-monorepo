@@ -30,7 +30,7 @@
       "bundler": "metro"
     },
     "extra": {
-      "apiUrl": "http://192.168.1.44:3000/v1",
+      "apiUrl": "https://api.stoqlyhome.com/v1",
       "eas": {
         "projectId": "ed45b39d-e8a4-48b0-8380-de7090779444"
       },
