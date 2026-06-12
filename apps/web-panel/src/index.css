@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ── Tema base ──────────────────────────────────────────── */
+  :root {
+    --teal: #4ECDC4;
+    --teal-dark: #3BADA5;
+    --bg: #0F0F1A;
+    --surface: #1A1A2E;
+    --surface2: #22223B;
+    --border: #2A2A3E;
+    --text: #F0F0F5;
+    --muted: #888899;
+    --danger: #FF6B6B;
+    --warning: #FFD166;
+    --ok: #4ECDC4;
+    /* accesibilidad */
+    --focus-ring: 3px solid #4ECDC4;
+    --focus-offset: 3px;
+  }
+
+  /* ── Alto contraste ─────────────────────────────────────── */
+  .hc {
+    --bg: #000000;
+    --surface: #0D0D0D;
+    --surface2: #1A1A1A;
+    --border: #555566;
+    --text: #FFFFFF;
+    --muted: #DDDDEE;
+    --teal: #00FFEE;
+    --teal-dark: #00CCC0;
+    --danger: #FF4444;
+    --warning: #FFEE00;
+    --ok: #00FF88;
+    --focus-ring: 3px solid #FFFF00;
+  }
+
+  /* ── Tamaños de fuente ──────────────────────────────────── */
+  .fs-large  { font-size: 112.5%; }
+  .fs-xlarge { font-size: 131.25%; }
+
+  /* ── Movimiento reducido ────────────────────────────────── */
+  .rm *, .rm *::before, .rm *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+
+  /* ── Focus visible ──────────────────────────────────────── */
+  :focus { outline: none; }
+  :focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+    border-radius: 4px;
+  }
+
+  /* ── Skip link ──────────────────────────────────────────── */
+  .skip-link {
+    position: fixed;
+    top: -100px;
+    left: 16px;
+    z-index: 99999;
+    background: var(--teal);
+    color: #000;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: 0 0 10px 10px;
+    text-decoration: none;
+    transition: top 0.15s;
+  }
+  .skip-link:focus-visible {
+    top: 0;
+    outline: 3px solid #000;
+    outline-offset: 2px;
+  }
+
+  /* ── Región live (lectores de pantalla) ─────────────────── */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .sr-live {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* ── Base ───────────────────────────────────────────────── */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+}

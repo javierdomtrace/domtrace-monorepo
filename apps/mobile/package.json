@@ -1,0 +1,34 @@
+{
+  "name": "mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "build:preview": "eas build --profile preview",
+    "build:production": "eas build --profile production"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "*",
+    "expo": "~56.0.0",
+    "expo-router": "~6.0.0",
+    "expo-linking": "~8.0.0",
+    "expo-speech": "~14.0.0",
+    "expo-camera": "~17.0.0",
+    "expo-haptics": "~15.0.0",
+    "expo-constants": "~18.0.0",
+    "expo-status-bar": "~3.0.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "zustand": "^4.5.2",
+    "@tanstack/react-query": "^5.40.0",
+    "@react-native-async-storage/async-storage": "2.2.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2",
+    "@types/react": "~19.1.0",
+    "babel-preset-expo": "~56.0.0"
+  }
+}

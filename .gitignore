@@ -1,0 +1,28 @@
+# Dependencias
+node_modules/
+.pnpm-store/
+
+# Builds
+dist/
+build/
+.next/
+.expo/
+
+# Variables de entorno (NUNCA subir secretos)
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

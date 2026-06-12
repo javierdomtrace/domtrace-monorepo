@@ -1,0 +1,100 @@
+# Despliegue de producción / prueba real — Stoqly en Arsys VPS
+#
+# Uso:
+#   cd infra
+#   cp ../.env.production.example ../.env.production   # y rellenar valores reales
+#   docker compose -f docker-compose.prod.yml --env-file ../.env.production up -d --build
+#
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: stoqly-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-domtrace}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-domtrace}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-domtrace}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stoqly
+
+  redis:
+    image: redis:7-alpine
+    container_name: stoqly-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - stoqly
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    container_name: stoqly-api
+    restart: unless-stopped
+    env_file:
+      - ../.env.production
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-domtrace}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-domtrace}
+      DIRECT_URL: postgresql://${POSTGRES_USER:-domtrace}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-domtrace}
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:3000:3000'
+    networks:
+      - stoqly
+
+  web-panel:
+    build:
+      context: ..
+      dockerfile: apps/web-panel/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: stoqly-web-panel
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:8080:80'
+    networks:
+      - stoqly
+
+  # web-albaran (Next.js) — añadir cuando esté implementado:
+  # web-albaran:
+  #   build:
+  #     context: ..
+  #     dockerfile: apps/web-albaran/Dockerfile
+  #   container_name: stoqly-albaran
+  #   restart: unless-stopped
+  #   env_file:
+  #     - ../.env.production
+  #   ports:
+  #     - '127.0.0.1:3001:3000'
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - stoqly
+
+networks:
+  stoqly:
+
+volumes:
+  postgres_data:
+  redis_data:
