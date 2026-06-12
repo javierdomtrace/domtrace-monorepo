@@ -110,6 +110,16 @@ export function StoqlyWidget() {
     }
   }, [open])
 
+  // Cerrar con Escape
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open])
+
   // ── Wake word — se activa manualmente con el botón 🟢 ─────────────────
   function toggleWakeWord() {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -340,6 +350,9 @@ export function StoqlyWidget() {
       {/* Botón flotante */}
       <button
         onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        aria-controls="stoqly-chat-panel"
+        aria-label={open ? 'Cerrar chat con Stoqly' : unread > 0 ? `Abrir chat con Stoqly, ${unread} mensajes nuevos` : 'Abrir chat con Stoqly'}
         style={{
           position: 'fixed', bottom: 28, right: 28, zIndex: 1000,
           width: 56, height: 56, borderRadius: '50%',
@@ -352,17 +365,17 @@ export function StoqlyWidget() {
         }}
         title={wakeActive && !open ? 'Di "Stoqly" para activar' : 'Hablar con Stoqly'}
       >
-        {open ? '✕' : '✦'}
+        <span aria-hidden="true">{open ? '✕' : '✦'}</span>
         {/* Punto verde cuando wake word activo */}
         {wakeActive && !open && (
-          <span style={{
+          <span aria-hidden="true" style={{
             position: 'absolute', bottom: 2, right: 2,
             width: 9, height: 9, borderRadius: '50%',
             background: '#1D9E75', border: '2px solid #0F1923',
           }} />
         )}
         {unread > 0 && !open && (
-          <span style={{
+          <span aria-hidden="true" style={{
             position: 'absolute', top: -4, right: -4,
             background: '#E24B4A', color: '#fff',
             borderRadius: '50%', width: 20, height: 20,
@@ -376,7 +389,7 @@ export function StoqlyWidget() {
 
       {/* Panel del chat */}
       {open && (
-        <div style={{
+        <div id="stoqly-chat-panel" role="dialog" aria-label={`Chat con ${user?.assistantName ?? 'Stoqly'}`} style={{
           position: 'fixed', bottom: 96, right: 28, zIndex: 999,
           width: 380, height: 520,
           background: '#1A1A2E', border: '1px solid #2A2A3E',
@@ -407,6 +420,8 @@ export function StoqlyWidget() {
             <button
               onClick={toggleWakeWord}
               title={wakeActive ? 'Desactivar escucha de voz' : `Activar escucha ("Hola ${user?.assistantName ?? 'Stoqly'}")`}
+              aria-label={wakeActive ? 'Desactivar escucha de voz' : `Activar escucha por voz, di Hola ${user?.assistantName ?? 'Stoqly'}`}
+              aria-pressed={wakeActive}
               style={{
                 width: 30, height: 30, borderRadius: '50%',
                 background: wakeActive ? 'rgba(78,205,196,0.2)' : '#2A2A3E',
@@ -417,12 +432,12 @@ export function StoqlyWidget() {
                 animation: wakeActive ? 'pulse 2s infinite' : 'none',
               }}
             >
-              {wakeActive ? '🟢' : '🎤'}
+              <span aria-hidden="true">{wakeActive ? '🟢' : '🎤'}</span>
             </button>
           </div>
 
           {/* Mensajes */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div aria-live="polite" aria-atomic="false" style={{ flex: 1, overflowY: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {messages.map((msg, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
                 <div style={{
@@ -487,6 +502,8 @@ export function StoqlyWidget() {
             <button
               onClick={toggleMic}
               title={listening ? 'Parar' : 'Hablar'}
+              aria-label={listening ? 'Parar de escuchar' : 'Hablar por voz'}
+              aria-pressed={listening}
               style={{
                 width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                 background: listening ? '#E24B4A' : '#2A2A3E',
@@ -496,7 +513,7 @@ export function StoqlyWidget() {
                 animation: listening ? 'pulse 1s infinite' : 'none',
               }}
             >
-              🎙️
+              <span aria-hidden="true">🎙️</span>
             </button>
 
             <input
@@ -505,6 +522,7 @@ export function StoqlyWidget() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
               placeholder={listening ? 'Escuchando...' : 'Escribe a Stoqly...'}
+              aria-label="Mensaje para Stoqly"
               style={{
                 flex: 1, padding: '9px 12px', background: '#0F0F1A',
                 border: `1px solid ${listening ? '#E24B4A' : '#2A2A3E'}`, borderRadius: 10,
@@ -516,6 +534,8 @@ export function StoqlyWidget() {
             <button
               onClick={() => setVoiceEnabled(v => !v)}
               title={voiceEnabled ? 'Silenciar voz' : 'Activar voz'}
+              aria-label={voiceEnabled ? 'Silenciar voz' : 'Activar voz'}
+              aria-pressed={voiceEnabled}
               style={{
                 width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                 background: voiceEnabled ? 'rgba(78,205,196,0.15)' : '#2A2A3E',
@@ -524,12 +544,13 @@ export function StoqlyWidget() {
                 fontSize: 15,
               }}
             >
-              {voiceEnabled ? '🔊' : '🔇'}
+              <span aria-hidden="true">{voiceEnabled ? '🔊' : '🔇'}</span>
             </button>
 
             <button
               onClick={sendMessage}
               disabled={!input.trim() || loading}
+              aria-label="Enviar mensaje"
               style={{
                 width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                 background: input.trim() && !loading ? '#1D9E75' : '#2A2A3E',
@@ -538,7 +559,7 @@ export function StoqlyWidget() {
                 fontSize: 16, color: '#fff', transition: 'background 0.15s',
               }}
             >
-              ↑
+              <span aria-hidden="true">↑</span>
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { ShoppingCart, CheckCircle, Trash2, Heart, X, MapPin, AlertTriangle } from 'lucide-react'
@@ -333,7 +333,7 @@ export function AlertsPage() {
 
       {/* 🏦 Modal donación */}
       {donationItem && (
-        <Modal onClose={() => setDonationItem(null)}>
+        <Modal onClose={() => setDonationItem(null)} label={`Donar ${donationItem.name} al Banco de Alimentos`}>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#3B6D11', marginBottom: 4 }}>
               🏦 Donar al Banco de Alimentos
@@ -382,7 +382,7 @@ export function AlertsPage() {
 
       {/* ⚙️ Modal gestionar (consumir / donar / descartar) */}
       {actionItem && (
-        <Modal onClose={() => setActionItem(null)}>
+        <Modal onClose={() => setActionItem(null)} label={`¿Qué hacemos con ${actionItem.name}?`}>
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
             <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>¿Qué hacemos con</div>
             <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{actionItem.name}</div>
@@ -467,13 +467,24 @@ function ActionBtn({ onClick, icon, label, color }: { onClick: () => void; icon:
   )
 }
 
-function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+function Modal({ children, onClose, label }: { children: React.ReactNode; onClose: () => void; label: string }) {
+  const modalRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    modalRef.current?.focus()
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: '#1A1A2E', border: '1px solid #2A2A3E', borderRadius: 16, padding: 24, width: 400, maxWidth: '95vw' }}>
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} style={{ background: '#1A1A2E', border: '1px solid #2A2A3E', borderRadius: 16, padding: 24, width: 400, maxWidth: '95vw' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={18} /></button>
+          <button onClick={onClose} aria-label="Cerrar" style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={18} /></button>
         </div>
         {children}
       </div>

@@ -468,14 +468,24 @@ Responde ÚNICAMENTE con JSON válido:
                 {prepGuide.pasos?.map((paso, i) => {
                   const done = doneSteps.has(i)
                   return (
-                    <div key={i} onClick={() => toggleStep(i)} style={{
+                    <div
+                      key={i}
+                      role="checkbox"
+                      aria-checked={done}
+                      aria-label={paso.paso}
+                      tabIndex={0}
+                      onClick={() => toggleStep(i)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleStep(i) }
+                      }}
+                      style={{
                       background: done ? 'rgba(29,158,117,0.06)' : 'var(--surface)',
                       border: `1px solid ${done ? 'rgba(29,158,117,0.3)' : 'var(--border)'}`,
                       borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
                       transition: 'all 0.15s', opacity: done ? 0.65 : 1,
                       display: 'flex', gap: 14, alignItems: 'flex-start',
                     }}>
-                      <div style={{ flexShrink: 0, marginTop: 2 }}>
+                      <div aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }}>
                         {done
                           ? <CheckCircle2 size={20} color="#1D9E75" />
                           : <div style={{

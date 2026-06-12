@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { X, Plus, Minus } from 'lucide-react'
@@ -57,20 +57,31 @@ export function EditItemModal({ item, onClose }: EditItemModalProps) {
     setQuantity(String(Math.round(next * 10) / 10))
   }
 
+  const modalRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    modalRef.current?.focus()
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 2000,
       background: 'rgba(0,0,0,0.6)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="edit-item-title" tabIndex={-1} style={{
         background: '#1A1A2E', border: '1px solid #2A2A3E',
         borderRadius: 16, padding: 28, width: 440, maxWidth: '95vw',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#F0F0F5' }}>Editar producto</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 4 }}>
+          <h2 id="edit-item-title" style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#F0F0F5' }}>Editar producto</h2>
+          <button onClick={onClose} aria-label="Cerrar" style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 4 }}>
             <X size={20} />
           </button>
         </div>

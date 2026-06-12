@@ -21,6 +21,7 @@ async function lookupBarcode(barcode: string): Promise<ProductInfo | null> {
 export function BarcodeScanner({ onClose }: BarcodeScannerProps) {
   const qc = useQueryClient()
   const scannerRef = useRef<any>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
 
   const [status, setStatus] = useState<'scanning' | 'found' | 'done' | 'error'>('scanning')
   const [errorMsg, setErrorMsg] = useState('')
@@ -92,13 +93,22 @@ export function BarcodeScanner({ onClose }: BarcodeScannerProps) {
     }
   }, [])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { scannerRef.current?.stop().catch(() => {}); onClose() }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    modalRef.current?.focus()
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 2000,
       background: 'rgba(0,0,0,0.85)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="barcode-scanner-title" tabIndex={-1} style={{
         background: '#1A1A2E', border: '1px solid #2A2A3E',
         borderRadius: 16, width: 480, maxWidth: '95vw', overflow: 'hidden',
       }}>
@@ -106,9 +116,10 @@ export function BarcodeScanner({ onClose }: BarcodeScannerProps) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid #2A2A3E' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Camera size={20} color="#1D9E75" />
-            <span style={{ fontSize: 16, fontWeight: 700, color: '#F0F0F5' }}>Escanear código de barras</span>
+            <span id="barcode-scanner-title" style={{ fontSize: 16, fontWeight: 700, color: '#F0F0F5' }}>Escanear código de barras</span>
           </div>
           <button onClick={() => { scannerRef.current?.stop().catch(() => {}); onClose() }}
+            aria-label="Cerrar"
             style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}>
             <X size={20} />
           </button>

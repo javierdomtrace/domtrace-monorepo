@@ -312,8 +312,8 @@ export function SettingsPage() {
         <Field label="Modo de aviso">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {Object.entries(ACCESSIBILITY_LABELS).map(([k, v]) => (
-              <button key={k} onClick={() => setAccessibilityMode(k)} style={{
-                padding: '10px 14px', borderRadius: 10, fontSize: 13, cursor: 'pointer', textAlign: 'left',
+              <button key={k} onClick={() => setAccessibilityMode(k)} disabled={!editing} style={{
+                padding: '10px 14px', borderRadius: 10, fontSize: 13, cursor: editing ? 'pointer' : 'default', textAlign: 'left',
                 border: accessibilityMode === k ? '1px solid #1D9E75' : '1px solid var(--border)',
                 background: accessibilityMode === k ? 'rgba(29,158,117,0.1)' : 'var(--surface)',
                 color: accessibilityMode === k ? '#1D9E75' : 'var(--muted)',
@@ -324,8 +324,8 @@ export function SettingsPage() {
         <Field label="Velocidad de voz">
           <div style={{ display: 'flex', gap: 8 }}>
             {['SLOW', 'NORMAL', 'FAST'].map((s, i) => (
-              <button key={s} onClick={() => setVoiceSpeed(s)} style={{
-                flex: 1, padding: '9px', borderRadius: 10, fontSize: 13, cursor: 'pointer',
+              <button key={s} onClick={() => setVoiceSpeed(s)} disabled={!editing} style={{
+                flex: 1, padding: '9px', borderRadius: 10, fontSize: 13, cursor: editing ? 'pointer' : 'default',
                 border: voiceSpeed === s ? '1px solid #1D9E75' : '1px solid var(--border)',
                 background: voiceSpeed === s ? 'rgba(29,158,117,0.1)' : 'var(--surface)',
                 color: voiceSpeed === s ? '#1D9E75' : 'var(--muted)',
@@ -334,7 +334,7 @@ export function SettingsPage() {
           </div>
         </Field>
         <Field label="">
-          <Toggle checked={humorEnabled} onChange={setHumorEnabled} label="Humor activado" desc="Stoqly puede hacer algún comentario gracioso de vez en cuando" />
+          <Toggle checked={humorEnabled} onChange={setHumorEnabled} label="Humor activado" desc="Stoqly puede hacer algún comentario gracioso de vez en cuando" disabled={!editing} />
         </Field>
       </Section>
 
@@ -346,8 +346,8 @@ export function SettingsPage() {
         <Field label="Supermercado principal">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {SUPERMARKETS.map(s => (
-              <button key={s} onClick={() => setSupermarket(s)} style={{
-                padding: '7px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+              <button key={s} onClick={() => setSupermarket(s)} disabled={!editing} style={{
+                padding: '7px 14px', borderRadius: 20, fontSize: 13, cursor: editing ? 'pointer' : 'default',
                 border: supermarket === s ? '1px solid #1D9E75' : '1px solid var(--border)',
                 background: supermarket === s ? 'rgba(29,158,117,0.1)' : 'var(--surface)',
                 color: supermarket === s ? '#1D9E75' : 'var(--muted)',
@@ -476,15 +476,27 @@ export function SettingsPage() {
           {CATEGORIAS.map(cat => {
             const active = categoriasActivas.includes(cat.id)
             const [bg, fg] = TIER_COLORS[cat.tier]
+            const disabled = cat.locked || !editing
             return (
-              <div key={cat.id} onClick={() => toggleCategoria(cat.id)} style={{
+              <div key={cat.id}
+                role="switch"
+                aria-checked={active}
+                aria-label={cat.label}
+                aria-disabled={disabled || undefined}
+                tabIndex={cat.locked ? -1 : 0}
+                onClick={() => { if (!disabled) toggleCategoria(cat.id) }}
+                onKeyDown={e => {
+                  if (disabled) return
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCategoria(cat.id) }
+                }}
+                style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
-                borderRadius: 12, cursor: cat.locked ? 'default' : 'pointer',
+                borderRadius: 12, cursor: disabled ? 'default' : 'pointer',
                 border: active ? '1px solid #1D9E75' : '1px solid var(--border)',
                 background: active ? 'rgba(29,158,117,0.06)' : 'var(--bg)',
                 transition: 'all 0.15s',
               }}>
-                <span style={{ fontSize: 24, flexShrink: 0 }}>{cat.icon}</span>
+                <span aria-hidden="true" style={{ fontSize: 24, flexShrink: 0 }}>{cat.icon}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{cat.label}</span>
@@ -496,7 +508,7 @@ export function SettingsPage() {
                   <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>{cat.desc}</div>
                 </div>
                 {!cat.locked && (
-                  <div style={{
+                  <div aria-hidden="true" style={{
                     width: 42, height: 24, borderRadius: 12, position: 'relative', flexShrink: 0,
                     background: active ? '#1D9E75' : 'var(--border)', transition: 'background 0.2s',
                   }}>
@@ -575,8 +587,8 @@ export function SettingsPage() {
         <Field label="Tamaño del texto">
           <div style={{ display: 'flex', gap: 8 }}>
             {['NORMAL', 'LARGE', 'XLARGE'].map((s, i) => (
-              <button key={s} onClick={() => setTextSize(s)} style={{
-                flex: 1, padding: '9px', borderRadius: 10, fontSize: [13, 15, 17][i], cursor: 'pointer',
+              <button key={s} onClick={() => setTextSize(s)} disabled={!editing} style={{
+                flex: 1, padding: '9px', borderRadius: 10, fontSize: [13, 15, 17][i], cursor: editing ? 'pointer' : 'default',
                 border: textSize === s ? '1px solid #1D9E75' : '1px solid var(--border)',
                 background: textSize === s ? 'rgba(29,158,117,0.1)' : 'var(--surface)',
                 color: textSize === s ? '#1D9E75' : 'var(--muted)',
@@ -586,10 +598,10 @@ export function SettingsPage() {
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: '6px 0 0' }}>Normal · Grande · Muy grande</p>
         </Field>
         <Field label="">
-          <Toggle checked={highContrast} onChange={setHighContrast} label="Alto contraste" desc="Mejora la visibilidad para personas con baja visión (WCAG AA)" />
+          <Toggle checked={highContrast} onChange={setHighContrast} label="Alto contraste" desc="Mejora la visibilidad para personas con baja visión (WCAG AA)" disabled={!editing} />
         </Field>
         <Field label="">
-          <Toggle checked={reduceMotion} onChange={setReduceMotion} label="Sin animaciones" desc="Elimina transiciones para personas con sensibilidad vestibular" />
+          <Toggle checked={reduceMotion} onChange={setReduceMotion} label="Sin animaciones" desc="Elimina transiciones para personas con sensibilidad vestibular" disabled={!editing} />
         </Field>
         {/* Patrones de vibración */}
         <Field label="Patrones de vibración">
@@ -823,9 +835,12 @@ function NutritionalSection({
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16 }}>
-      <div
+      <button
+        type="button"
         onClick={() => setOpen(o => !o)}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+        aria-expanded={open}
+        aria-controls="nutricion-contenido"
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', width: '100%', background: 'none', border: 'none', padding: 0, textAlign: 'left', font: 'inherit', color: 'inherit' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#1D9E75' }}>
           <Target size={16} />
@@ -838,12 +853,12 @@ function NutritionalSection({
               {resultado.kcal} kcal · {resultado.prot}g prot/día
             </span>
           )}
-          <span style={{ color: 'var(--muted)', fontSize: 18, lineHeight: 1 }}>{open ? '▲' : '▼'}</span>
+          <span aria-hidden="true" style={{ color: 'var(--muted)', fontSize: 18, lineHeight: 1 }}>{open ? '▲' : '▼'}</span>
         </div>
-      </div>
+      </button>
 
       {open && (
-        <div style={{ marginTop: 18, ...editGate(editing) }}>
+        <div id="nutricion-contenido" style={{ marginTop: 18, ...editGate(editing) }}>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 16px' }}>
             Si rellenas estos datos, Vicky podrá orientarte sobre qué comer según tu objetivo — calorías, proteínas, qué tienes en casa que encaja. Es completamente opcional.
           </p>
@@ -877,9 +892,9 @@ function NutritionalSection({
           <Field label="Nivel de actividad física">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {ACTIVIDAD_OPTS.map(o => (
-                <button key={o.key} onClick={() => setNivelActividad(o.key)} style={{
+                <button key={o.key} onClick={() => setNivelActividad(o.key)} disabled={!editing} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '10px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                  padding: '10px 14px', borderRadius: 10, cursor: editing ? 'pointer' : 'default', textAlign: 'left',
                   border: nivelActividad === o.key ? '1px solid #1D9E75' : '1px solid var(--border)',
                   background: nivelActividad === o.key ? 'rgba(29,158,117,0.08)' : 'var(--bg)',
                 }}>
@@ -897,8 +912,8 @@ function NutritionalSection({
           <Field label="¿Cuál es tu objetivo?">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {OBJETIVO_OPTS.map(o => (
-                <button key={o.key} onClick={() => setObjetivoNutricional(o.key)} style={{
-                  padding: '12px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                <button key={o.key} onClick={() => setObjetivoNutricional(o.key)} disabled={!editing} style={{
+                  padding: '12px 14px', borderRadius: 10, cursor: editing ? 'pointer' : 'default', textAlign: 'left',
                   border: objetivoNutricional === o.key ? '1px solid #1D9E75' : '1px solid var(--border)',
                   background: objetivoNutricional === o.key ? 'rgba(29,158,117,0.08)' : 'var(--bg)',
                 }}>
@@ -975,9 +990,15 @@ function SportSection({
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16 }}>
-      <div onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        aria-controls="deporte-contenido"
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', width: '100%', background: 'none', border: 'none', padding: 0, textAlign: 'left', font: 'inherit', color: 'inherit' }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 16 }}>🏃</span>
+          <span aria-hidden="true" style={{ fontSize: 16 }}>🏃</span>
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Actividad física</span>
           <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400 }}>— opcional</span>
         </div>
@@ -987,12 +1008,12 @@ function SportSection({
               {deporte}{deporteDiasSemana ? ` · ${deporteDiasSemana}x/semana` : ''}
             </span>
           )}
-          <span style={{ color: 'var(--muted)', fontSize: 18, lineHeight: 1 }}>{open ? '▲' : '▼'}</span>
+          <span aria-hidden="true" style={{ color: 'var(--muted)', fontSize: 18, lineHeight: 1 }}>{open ? '▲' : '▼'}</span>
         </div>
-      </div>
+      </button>
 
       {open && (
-        <div style={{ marginTop: 18, ...editGate(editing) }}>
+        <div id="deporte-contenido" style={{ marginTop: 18, ...editGate(editing) }}>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 16px' }}>
             Con esta información Stoqly puede ayudarte mejor: suplementos adecuados para tu deporte, hidratación, recuperación, o qué comer antes y después de entrenar.
           </p>
@@ -1016,8 +1037,8 @@ function SportSection({
                 <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 8, fontWeight: 500 }}>Nivel</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {DEPORTE_NIVEL_OPTS.map(o => (
-                    <button key={o.key} onClick={() => setDeporteNivel(v => v === o.key ? '' : o.key)} style={{
-                      padding: '10px 14px', borderRadius: 10, fontSize: 13, cursor: 'pointer', textAlign: 'left',
+                    <button key={o.key} onClick={() => setDeporteNivel(v => v === o.key ? '' : o.key)} disabled={!editing} style={{
+                      padding: '10px 14px', borderRadius: 10, fontSize: 13, cursor: editing ? 'pointer' : 'default', textAlign: 'left',
                       background: deporteNivel === o.key ? 'rgba(29,158,117,0.12)' : 'var(--bg)',
                       border: deporteNivel === o.key ? '1.5px solid #1D9E75' : '1.5px solid var(--border)',
                       color: 'var(--text)',
@@ -1032,8 +1053,8 @@ function SportSection({
               <Field label="Días de entrenamiento por semana">
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[1,2,3,4,5,6,7].map(d => (
-                    <button key={d} onClick={() => setDeporteDiasSemana(v => v === String(d) ? '' : String(d))} style={{
-                      width: 40, height: 40, borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                    <button key={d} onClick={() => setDeporteDiasSemana(v => v === String(d) ? '' : String(d))} disabled={!editing} style={{
+                      width: 40, height: 40, borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: editing ? 'pointer' : 'default',
                       background: deporteDiasSemana === String(d) ? '#1D9E75' : 'var(--bg)',
                       border: deporteDiasSemana === String(d) ? '1.5px solid #1D9E75' : '1.5px solid var(--border)',
                       color: deporteDiasSemana === String(d) ? '#fff' : 'var(--text)',
@@ -1080,10 +1101,22 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function Toggle({ checked, onChange, label, desc }: { checked: boolean; onChange: (v: boolean) => void; label: string; desc: string }) {
+function Toggle({ checked, onChange, label, desc, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; desc: string; disabled?: boolean }) {
   return (
-    <div onClick={() => onChange(!checked)} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-      <div style={{ width: 42, height: 24, borderRadius: 12, position: 'relative', flexShrink: 0, background: checked ? '#1D9E75' : 'var(--border)', transition: 'background 0.2s' }}>
+    <div
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : 0}
+      onClick={() => { if (!disabled) onChange(!checked) }}
+      onKeyDown={e => {
+        if (disabled) return
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(!checked) }
+      }}
+      style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: disabled ? 'default' : 'pointer' }}
+    >
+      <div aria-hidden="true" style={{ width: 42, height: 24, borderRadius: 12, position: 'relative', flexShrink: 0, background: checked ? '#1D9E75' : 'var(--border)', transition: 'background 0.2s' }}>
         <div style={{ position: 'absolute', top: 3, left: checked ? 21 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
       </div>
       <div>
