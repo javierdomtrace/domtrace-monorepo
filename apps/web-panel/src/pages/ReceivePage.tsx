@@ -4,6 +4,7 @@ import { api } from '../lib/api'
 import { ScanLine, Plus, Trash2, CheckCircle, RefreshCw, Package, Leaf, ChevronDown, ChevronUp, Camera } from 'lucide-react'
 import { useA11y } from '../store/accessibility'
 import { speak } from '../lib/tts'
+import { vibrate } from '../lib/vibration'
 
 // ── Tipos ────────────────────────────────────────────────────────────
 
@@ -135,6 +136,7 @@ export function ReceivePage() {
         : item
     ))
     speak(info?.name ? `Producto detectado: ${finalName}` : `Código ${clean} no reconocido. Añadido como producto sin identificar.`, voiceFeedback)
+    vibrate(info?.name ? 'ITEM_ADDED' : 'ALERT')
     barcodeRef.current?.focus()
   }, [voiceFeedback])
 
@@ -509,6 +511,7 @@ function QueueCard({ item, zones, expanded, onToggle, onUpdate, onRemove, onSave
     if (!result) {
       setOcrStatus('error')
       speak('No se pudo analizar la foto de la etiqueta.', voiceFeedback)
+      vibrate('ERROR')
       return
     }
     setOcrResult(result)
@@ -528,8 +531,10 @@ function QueueCard({ item, zones, expanded, onToggle, onUpdate, onRemove, onSave
     if (partes.length > 0) {
       const aviso = result.confidence === 'baja' ? ' Revisa los datos, la confianza es baja.' : ''
       speak(`Etiqueta analizada: ${partes.join(', ')}.${aviso}`, voiceFeedback)
+      vibrate(result.confidence === 'baja' ? 'ALERT' : 'CONFIRM')
     } else {
       speak('No se ha encontrado fecha de caducidad ni lote en la foto.', voiceFeedback)
+      vibrate('ALERT')
     }
   }
 

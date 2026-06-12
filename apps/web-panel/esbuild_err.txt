@@ -1,0 +1,5 @@
+✘ [ERROR] Invalid transform flag: "--loader:.tsx=tsx"
+
+  Use "--loader=.tsx=tsx" instead of "--loader:.tsx=tsx". Flags that can only be specified once use "=" instead of ":".
+
+1 error
