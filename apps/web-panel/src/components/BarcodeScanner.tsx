@@ -143,7 +143,7 @@ export function BarcodeScanner({ onClose }: BarcodeScannerProps) {
           <div style={{ padding: 20 }}>
             <div style={{ display: 'flex', gap: 14, marginBottom: 20, alignItems: 'flex-start' }}>
               {product?.imageUrl && (
-                <img src={product.imageUrl} alt="" style={{ width: 70, height: 70, objectFit: 'contain', borderRadius: 8, background: '#fff', padding: 4, flexShrink: 0 }} />
+                <img src={product.imageUrl} alt={`Foto del producto ${product?.name ?? 'encontrado'}`} style={{ width: 70, height: 70, objectFit: 'contain', borderRadius: 8, background: '#fff', padding: 4, flexShrink: 0 }} />
               )}
               <div style={{ flex: 1 }}>
                 {product?.name

@@ -84,7 +84,7 @@ export function RegisterPage() {
       }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 32, fontWeight: 800, color: '#1D9E75' }}>Stoqly</div>
+          <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, color: '#1D9E75' }}>Stoqly</h1>
           <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>Tu despensa inteligente</div>
         </div>
 

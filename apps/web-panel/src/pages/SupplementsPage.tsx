@@ -555,7 +555,7 @@ function SupplementBarcodeScanner({
           <div style={{ padding: 20 }}>
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 20 }}>
               {product.imageUrl && (
-                <img src={product.imageUrl} alt="" style={{ width: 64, height: 64, objectFit: 'contain', background: '#fff', borderRadius: 8, padding: 4, flexShrink: 0 }} />
+                <img src={product.imageUrl} alt={`Foto del producto ${product.name}`} style={{ width: 64, height: 64, objectFit: 'contain', background: '#fff', borderRadius: 8, padding: 4, flexShrink: 0 }} />
               )}
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>✅ {product.name}</div>

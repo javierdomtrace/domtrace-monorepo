@@ -561,7 +561,7 @@ function QueueCard({ item, zones, expanded, onToggle, onUpdate, onRemove, onSave
           background: item.removing ? 'rgba(29,158,117,0.2)' : isFresco ? 'rgba(59,109,17,0.15)' : 'rgba(78,205,196,0.08)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
         }}>
-          {item.removing ? '✅' : item.saving ? <RefreshCw size={18} color="#1D9E75" style={{ animation: 'spin 1s linear infinite' }} /> : isFresco ? '🌱' : item.imageUrl ? <img src={item.imageUrl} alt="" style={{ width: 30, height: 30, objectFit: 'contain' }} /> : '📦'}
+          {item.removing ? '✅' : item.saving ? <RefreshCw size={18} color="#1D9E75" style={{ animation: 'spin 1s linear infinite' }} /> : isFresco ? '🌱' : item.imageUrl ? <img src={item.imageUrl} alt={`Foto de ${item.name}`} style={{ width: 30, height: 30, objectFit: 'contain' }} /> : '📦'}
         </div>
 
         {/* Nombre + zona sugerida */}

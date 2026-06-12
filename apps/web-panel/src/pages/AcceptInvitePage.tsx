@@ -66,6 +66,7 @@ export function AcceptInvitePage() {
   if (status === 'loading') return (
     <div style={card}>
       <div style={box}>
+        <h1 className="sr-only">Comprobando invitación</h1>
         <div style={{ fontSize: 40, marginBottom: 16 }}>⏳</div>
         <p style={{ color: 'var(--muted)' }}>Comprobando invitación…</p>
       </div>
@@ -76,7 +77,7 @@ export function AcceptInvitePage() {
     <div style={card}>
       <div style={box}>
         <div style={{ fontSize: 40, marginBottom: 16 }}>❌</div>
-        <h2 style={{ color: 'var(--text)', marginBottom: 8 }}>Invitación no válida</h2>
+        <h1 style={{ fontSize: '1.17em', color: 'var(--text)', marginBottom: 8 }}>Invitación no válida</h1>
         <p style={{ color: 'var(--muted)', marginBottom: 24 }}>{errorMsg}</p>
         <button
           onClick={() => navigate('/login')}
@@ -92,7 +93,7 @@ export function AcceptInvitePage() {
     <div style={card}>
       <div style={box}>
         <div style={{ fontSize: 40, marginBottom: 16 }}>🏠</div>
-        <h2 style={{ color: 'var(--text)', marginBottom: 8 }}>¡Bienvenido!</h2>
+        <h1 style={{ fontSize: '1.17em', color: 'var(--text)', marginBottom: 8 }}>¡Bienvenido!</h1>
         <p style={{ color: 'var(--muted)' }}>Te has unido a <strong>{invite?.householdName}</strong>. Redirigiendo…</p>
       </div>
     </div>
@@ -107,9 +108,9 @@ export function AcceptInvitePage() {
     <div style={card}>
       <div style={box}>
         <div style={{ fontSize: 40, marginBottom: 16 }}>🏠</div>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>
           Invitación al hogar
-        </h2>
+        </h1>
         <p style={{ color: 'var(--muted)', marginBottom: 24, fontSize: 15 }}>
           Te han invitado a unirte a
         </p>

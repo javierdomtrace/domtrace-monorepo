@@ -90,7 +90,7 @@ function CosmeticBarcodeScanner({ onFound, onClose }: {
           <div style={{ padding: 20 }}>
             <div style={{ display: 'flex', gap: 14, marginBottom: 16, alignItems: 'flex-start' }}>
               {product.imageUrl && (
-                <img src={product.imageUrl} alt="" style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 8, background: '#fff', padding: 4, flexShrink: 0 }} />
+                <img src={product.imageUrl} alt={`Foto del producto ${product.name ?? 'encontrado'}`} style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 8, background: '#fff', padding: 4, flexShrink: 0 }} />
               )}
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
