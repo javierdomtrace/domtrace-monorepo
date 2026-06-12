@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, ShoppingCart, Bell, Package, LogOut,
   Settings, ChefHat, PackagePlus, Zap, Home, ChevronDown, Plus, Check, Sparkles, Pill, Stethoscope, Baby,
+  Menu, X,
 } from 'lucide-react'
 import { useAuth } from '../store/auth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -43,11 +44,18 @@ const TIER_LABELS: Record<string, { label: string; color: string }> = {
 export function Layout() {
   const { user, logout, updateUser } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const qc = useQueryClient()
   const [householdsOpen, setHouseholdsOpen] = useState(false)
   const [switching, setSwitching] = useState<string | null>(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+
+  // Cerrar el menú móvil al cambiar de sección
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [location.pathname])
 
   const tier = user?.subscriptionTier ?? 'FREE'
   const tierInfo = TIER_LABELS[tier] ?? TIER_LABELS.FREE
@@ -85,10 +93,13 @@ export function Layout() {
         setHouseholdsOpen(false)
         triggerRef.current?.focus()
       }
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false)
+      }
     }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
-  }, [householdsOpen])
+  }, [householdsOpen, mobileMenuOpen])
 
   async function switchHousehold(householdId: string) {
     if (switching) return
@@ -107,18 +118,55 @@ export function Layout() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div className="app-shell">
+      {/* ── Barra superior móvil ── */}
+      <div className="mobile-topbar">
+        <button
+          onClick={() => setMobileMenuOpen(o => !o)}
+          aria-label={mobileMenuOpen ? 'Cerrar panel de navegación' : 'Abrir panel de navegación'}
+          aria-expanded={mobileMenuOpen}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'none', border: 'none', color: 'var(--text)',
+            cursor: 'pointer', padding: 4,
+          }}
+        >
+          <Menu size={24} aria-hidden="true" />
+        </button>
+        <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--teal)' }}>Stoqly</span>
+      </div>
+
+      {/* ── Fondo oscuro al abrir el menú móvil ── */}
+      <div
+        className={`sidebar-backdrop ${mobileMenuOpen ? 'is-open' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
+
       {/* ── Sidebar ── */}
       <aside
         aria-label="Navegación principal"
+        className={`app-sidebar ${mobileMenuOpen ? 'is-open' : ''}`}
         style={{
-          width: 220, background: 'var(--surface)', borderRight: '1px solid var(--border)',
+          background: 'var(--surface)', borderRight: '1px solid var(--border)',
           display: 'flex', flexDirection: 'column', padding: '24px 0',
         }}
       >
-        {/* Logo */}
-        <div style={{ padding: '0 24px 20px' }} aria-hidden="true">
-          <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--teal)' }}>Stoqly</span>
+        {/* Logo + cerrar (móvil) */}
+        <div style={{ padding: '0 24px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span aria-hidden="true" style={{ fontSize: 24, fontWeight: 800, color: 'var(--teal)' }}>Stoqly</span>
+          <button
+            className="mobile-only"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Cerrar panel de navegación"
+            style={{
+              alignItems: 'center', justifyContent: 'center',
+              background: 'none', border: 'none', color: 'var(--muted)',
+              cursor: 'pointer', padding: 4,
+            }}
+          >
+            <X size={20} aria-hidden="true" />
+          </button>
         </div>
 
         {/* Household switcher */}
@@ -305,6 +353,7 @@ export function Layout() {
         tabIndex={-1}
         key={user?.activeHouseholdId ?? 'default'}
         aria-label="Contenido principal"
+        className="app-main"
         style={{ flex: 1, overflowY: 'auto', padding: 32 }}
       >
         <Outlet />
