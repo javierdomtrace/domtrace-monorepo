@@ -43,7 +43,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: (data: Onboarding
     return (
       <View style={s.container}>
         <Text style={s.logo}>Stoqly</Text>
-        <Text style={s.tagline}>Tu despensa inteligente</Text>
+        <Text style={s.tagline}>Tu asistente de hogar</Text>
         <Text style={s.question}>
           "Hola, soy Stoqly. Voy a ayudarte a que nunca te falte nada en casa y no vuelvas a tirar comida."
         </Text>

@@ -7,7 +7,7 @@
 
 ## Qué es Stoqly
 
-Stoqly es un sistema de inteligencia doméstica. Parte del control de la despensa y evoluciona hacia un asistente que cubre todas las necesidades del hogar: alimentación, salud, higiene, belleza, suplementación y cuidado de bebés. El asistente se llama **Stoqly** (o el nombre que el usuario elija) y actúa como un vecino que conoce la casa y ayuda a gestionarla.
+**Tu asistente de hogar.** Stoqly es un sistema de inteligencia doméstica. Nació para controlar la despensa y ha evolucionado hacia un asistente que cubre todas las necesidades del hogar: alimentación, salud, higiene, belleza, suplementación, cuidado de bebés y organización familiar (calendario). El asistente se llama **Stoqly** (o el nombre que el usuario elija) y actúa como un vecino que conoce la casa y ayuda a gestionarla.
 
 El modelo es escalable: desde una persona sola hasta un hogar con varios miembros, y desde un domicilio hasta una red de hogares o espacios gestionados.
 
@@ -90,6 +90,11 @@ Stoqly es el cerebro conversacional del producto. Está construida sobre Claude 
 - "¿Cuánto pesa el bebé?"
 - Conoce todos los perfiles de bebé del hogar con edad, tomas y mediciones
 
+**Responder sobre el calendario familiar**
+- "¿Qué tengo esta semana?"
+- "¿Cuándo es la próxima cita médica?"
+- Conoce los próximos eventos del hogar (siguientes 14 días) y, si hay uno hoy o mañana, puede recordarlo de forma breve al inicio de la conversación sin ser pesado
+
 **Ejecutar acciones directas**
 - Añadir un producto a la despensa
 - Marcar un producto como consumido (total o parcial)
@@ -97,7 +102,9 @@ Stoqly es el cerebro conversacional del producto. Está construida sobre Claude 
 - Añadir/eliminar productos de la lista de la compra
 - Quitar duplicados de la lista de la compra
 - Confirmar entrega al Banco de Alimentos
-- Navegar al usuario a cualquier sección de la app (incluyendo /baby, /supplements, /medications)
+- Apuntar un evento, cita o recordatorio en el calendario familiar ("apunta el cumpleaños de papá el 20 de junio")
+- Eliminar un evento del calendario familiar ("borra la cita del dentista")
+- Navegar al usuario a cualquier sección de la app (incluyendo /baby, /supplements, /medications, /calendar)
 - Buscar farmacias cercanas por código postal (OpenStreetMap + Overpass API)
 - Orientar sobre el punto SIGRE más cercano para medicamentos caducados
 
@@ -127,6 +134,7 @@ Stoqly es el cerebro conversacional del producto. Está construida sobre Claude 
 - Perfil deportivo: deporte, nivel, días por semana
 - Perfil nutricional: calorías y macros recomendados según peso, altura y objetivo
 - Donaciones pendientes para llevar al Banco de Alimentos
+- Próximos eventos del calendario familiar (siguientes 14 días)
 
 **Voz bidireccional (web panel)**
 - TTS: Stoqly habla con voz natural (ElevenLabs) o voz del navegador como fallback
@@ -271,6 +279,24 @@ Stoqly es el cerebro conversacional del producto. Está construida sobre Claude 
 - Sabe cuántas tomas ha habido hoy y cuándo fue la última
 - Conoce el peso y talla más recientes
 - Navega a /baby cuando el usuario pregunta por el bebé
+
+---
+
+## Módulo 6 — Calendario familiar ✅ Activo
+
+**Calendario interno básico**
+- Eventos, citas y recordatorios del hogar: cumpleaños, citas médicas, revisiones, eventos familiares…
+- Cada evento tiene título, descripción opcional, fecha y hora (o marcado como "todo el día") y aviso de recordatorio
+- Vista agrupada por día: Hoy, Mañana y resto de fechas ordenadas cronológicamente
+- Crear, editar y eliminar eventos desde /calendar
+- Sin sincronización externa — no se conecta con Google Calendar ni otros calendarios, es un calendario propio del hogar
+
+**Stoqly integrado**
+- Conoce los próximos eventos del hogar (siguientes 14 días)
+- Al iniciar una conversación, si hay un evento hoy o mañana, lo recuerda de forma breve y sin ser pesado
+- Apunta eventos por voz o texto: "Stoqly, apunta el cumpleaños de papá el 20 de junio"
+- Elimina eventos a petición: "borra la cita del dentista"
+- Navega a /calendar cuando el usuario pregunta por su agenda o calendario
 
 ---
 

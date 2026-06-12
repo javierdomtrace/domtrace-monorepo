@@ -45,6 +45,13 @@ interface ExtendedStoqlyCtx extends StoqlyContext {
     latestWeight?: number | null
     latestHeight?: number | null
   }>
+  upcomingEvents?: Array<{
+    id: string
+    title: string
+    startAt: string
+    allDay: boolean
+    daysUntil: number
+  }>
 }
 
 function buildSystemPrompt(ctx: ExtendedStoqlyCtx): string {
@@ -69,7 +76,7 @@ function buildSystemPrompt(ctx: ExtendedStoqlyCtx): string {
   const tier = ctx.subscriptionTier ?? 'FREE'
   const householdsList = ctx.households?.map(h => `- ${h.name}${h.isActive ? ' (activo)' : ''}`).join('\n') ?? ''
 
-  return `Eres ${ctx.assistantName}, el asistente personal de despensa de ${ctx.userName}.
+  return `Eres ${ctx.assistantName}, el asistente personal de hogar de ${ctx.userName}.
 
 PERSONALIDAD:
 - Eres un amigo que ayuda, no un asistente que informa.
@@ -133,6 +140,7 @@ SECCIONES DE LA APP (usa navigate_to para llevar al usuario):
 - /supplements → Suplementos: gestión de vitaminas, minerales y otros suplementos con alertas de restock.
 - /medications → Medicamentos: gestión de medicamentos con alertas de caducidad y stock bajo.
 - /baby → Bebés: perfiles de bebé, registro de tomas, mediciones (peso/talla), stock y medicamentos pediátricos.
+- /calendar → Calendario familiar: eventos, citas y recordatorios del hogar.
 - /settings → Ajustes: perfil, alergias, domicilios, notificaciones, accesibilidad, suscripción.
 
 CÓMO GUIAR AL USUARIO (ejemplos de respuestas):
@@ -205,6 +213,15 @@ ${ctx.babies.map(b => {
 }).join('\n')}
 Cuando el usuario pregunte por el bebé, usa esta información. Puedes navegar a /baby para gestionar perfiles, tomas y mediciones.
 Si el usuario menciona una toma reciente, horas de sueño, o pregunta qué necesita el bebé, responde con empatía y datos concretos.
+` : ''}
+${ctx.upcomingEvents && ctx.upcomingEvents.length > 0 ? `
+PRÓXIMOS EVENTOS DEL CALENDARIO FAMILIAR (${ctx.upcomingEvents.length}):
+${ctx.upcomingEvents.map(e => {
+  const cuando = e.daysUntil === 0 ? 'hoy' : e.daysUntil === 1 ? 'mañana' : `en ${e.daysUntil} días`
+  const hora = e.allDay ? '' : ` a las ${new Date(e.startAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
+  return `- ${e.title}: ${cuando}${hora} [id: ${e.id}]`
+}).join('\n')}
+Si hay un evento hoy o mañana, puedes recordárselo proactivamente al usuario al inicio de la conversación (de forma breve, sin ser pesado). Usa estos IDs para remove_calendar_event. Navega a /calendar para ver el calendario completo.
 ` : ''}
 INSTRUCCIONES:
 - Para ACCIONES (añadir, consumir, descartar, añadir a lista): usa las herramientas disponibles.
@@ -280,7 +297,7 @@ const STOQLY_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: 'object' as const,
       properties: {
-        route: { type: 'string', description: 'Ruta a la que navegar: /pantry, /alerts, /shopping, /recibir, /dinner, /plans, /supplements, /medications, /baby, /settings' },
+        route: { type: 'string', description: 'Ruta a la que navegar: /pantry, /alerts, /shopping, /recibir, /dinner, /plans, /supplements, /medications, /baby, /calendar, /settings' },
         reason: { type: 'string', description: 'Por qué navegas ahí (para el texto de confirmación)' },
       },
       required: ['route']
@@ -315,6 +332,33 @@ const STOQLY_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: 'object' as const,
       properties: {},
+    }
+  },
+  {
+    name: 'add_calendar_event',
+    description: 'Añade un evento, cita o recordatorio al calendario familiar del hogar. Úsalo cuando el usuario pida que apuntes, recuerdes o programes algo (cumpleaños, citas médicas, revisiones, eventos familiares...).',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        title: { type: 'string', description: 'Título del evento (OBLIGATORIO, ej: "Cita médica de Marta", "Cumpleaños de papá")' },
+        description: { type: 'string', description: 'Detalles adicionales (opcional)' },
+        startAt: { type: 'string', description: 'Fecha y hora de inicio en formato ISO 8601 (ej: "2026-06-15T10:30:00"). Si el usuario no da hora, usa las 09:00 o marca allDay=true.' },
+        allDay: { type: 'boolean', description: 'true si el evento es de todo el día (sin hora concreta)' },
+        reminder: { type: 'boolean', description: 'true (por defecto) si quieres que Stoqly recuerde el evento al usuario cuando se acerque' },
+      },
+      required: ['title', 'startAt']
+    }
+  },
+  {
+    name: 'remove_calendar_event',
+    description: 'Elimina un evento del calendario familiar por su ID. Úsalo cuando el usuario quiera borrar, cancelar o quitar un evento existente.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        eventId: { type: 'string', description: 'ID del evento a eliminar (de la lista PRÓXIMOS EVENTOS DEL CALENDARIO FAMILIAR del contexto)' },
+        title: { type: 'string', description: 'Título del evento (para confirmar al usuario)' },
+      },
+      required: ['eventId']
     }
   },
   {
@@ -487,7 +531,7 @@ export const stoqlyRoutes: FastifyPluginAsync = async (app) => {
       include: { user: { select: { id: true, name: true, allergens: true } } }
     })
 
-    const [pantry, pendingDonationItems, consumptionPatterns, shoppingListItems, supplementItems, medicationItems, babiesData] = await Promise.all([
+    const [pantry, pendingDonationItems, consumptionPatterns, shoppingListItems, supplementItems, medicationItems, babiesData, upcomingEventsData] = await Promise.all([
       prisma.item.findMany({
         where: { householdId: household.householdId, status: { notIn: ['CONSUMED', 'DISCARDED'] } },
         include: { zone: true },
@@ -522,6 +566,16 @@ export const stoqlyRoutes: FastifyPluginAsync = async (app) => {
           feedings: { orderBy: { feedingAt: 'desc' }, take: 1 },
           measurements: { orderBy: { measuredAt: 'desc' }, take: 1 },
         },
+      }),
+      // Próximos eventos del calendario familiar (próximos 14 días)
+      prisma.calendarEvent.findMany({
+        where: {
+          householdId: household.householdId,
+          startAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)), lte: new Date(Date.now() + 14 * 86400000) },
+        },
+        orderBy: { startAt: 'asc' },
+        take: 8,
+        select: { id: true, title: true, startAt: true, allDay: true },
       }),
     ])
 
@@ -638,6 +692,13 @@ export const stoqlyRoutes: FastifyPluginAsync = async (app) => {
           latestHeight: latestMeasurement?.height ?? null,
         }
       })) : undefined,
+      upcomingEvents: upcomingEventsData.map(e => ({
+        id: e.id,
+        title: e.title,
+        startAt: e.startAt.toISOString(),
+        allDay: e.allDay,
+        daysUntil: Math.floor((new Date(e.startAt).setHours(0,0,0,0) - new Date(now).setHours(0,0,0,0)) / 86400000),
+      })),
     }
 
     // Llamada a Claude con tools
@@ -871,6 +932,34 @@ async function executeAction(action: StoqlyAction, ctx: StoqlyContext): Promise<
       return toDelete.length > 0
         ? `Eliminados ${toDelete.length} duplicados. La lista está limpia.`
         : 'No había duplicados en la lista.'
+    }
+
+    case 'add_calendar_event': {
+      const title = action.payload.title || action.payload.titulo || action.payload.nombre
+      const startAtRaw = action.payload.startAt || action.payload.fecha
+      if (!title) return 'Error: falta el título del evento.'
+      if (!startAtRaw) return 'Error: falta la fecha del evento.'
+      const startAt = new Date(startAtRaw)
+      if (isNaN(startAt.getTime())) return 'Error: la fecha del evento no es válida.'
+      await prisma.calendarEvent.create({
+        data: {
+          householdId: ctx.householdId,
+          createdBy: ctx.userId,
+          title: String(title),
+          description: action.payload.description ?? action.payload.descripcion ?? undefined,
+          startAt,
+          allDay: action.payload.allDay ?? false,
+          reminder: action.payload.reminder ?? true,
+        }
+      })
+      const fecha = startAt.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+      return `Apuntado: "${title}" el ${fecha}.`
+    }
+
+    case 'remove_calendar_event': {
+      if (!action.payload.eventId) return 'Error: necesito el ID del evento a eliminar.'
+      await prisma.calendarEvent.delete({ where: { id: action.payload.eventId } }).catch(() => {})
+      return `Evento "${action.payload.title ?? ''}" eliminado del calendario.`
     }
 
     case 'find_nearby_pharmacy': {

@@ -35,7 +35,7 @@ export default function LoginScreen() {
           {/* Logo */}
           <View style={styles.logoWrap}>
             <Text style={styles.logo}>Stoqly</Text>
-            <Text style={styles.tagline}>Tu despensa inteligente</Text>
+            <Text style={styles.tagline}>Tu asistente de hogar</Text>
           </View>
 
           {/* Form */}

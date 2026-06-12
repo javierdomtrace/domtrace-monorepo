@@ -179,6 +179,7 @@ model Household {
   zones       PantryZone[]
   items       Item[]
   babies      Baby[]
+  calendarEvents CalendarEvent[]
 
   @@map("households")
 }
@@ -454,4 +455,27 @@ model ShoppingItem {
 
   @@index([householdId])
   @@map("shopping_items")
+}
+
+// ── CALENDARIO FAMILIAR ──────────────────────────────────────────────
+
+model CalendarEvent {
+  id          String    @id @default(uuid())
+  householdId String
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime?
+  allDay      Boolean   @default(false)
+  reminder    Boolean   @default(true)
+  createdBy   String    // userId
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  household   Household @relation(fields: [householdId], references: [id])
+
+  @@index([householdId])
+  @@index([startAt])
+  @@map("calendar_events")
 }

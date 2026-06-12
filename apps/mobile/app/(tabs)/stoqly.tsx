@@ -114,7 +114,7 @@ export default function StoqlyScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>✦ Stoqly</Text>
-          <Text style={styles.headerSub}>Tu asistente de despensa</Text>
+          <Text style={styles.headerSub}>Tu asistente de hogar</Text>
         </View>
         <TouchableOpacity
           onPress={speakLast}

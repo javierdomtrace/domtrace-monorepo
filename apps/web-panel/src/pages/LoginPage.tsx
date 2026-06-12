@@ -36,7 +36,7 @@ export function LoginPage() {
         borderRadius: 16, padding: 40, width: 380,
       }}>
         <h1 style={{ margin: '0 0 8px', fontSize: 28, fontWeight: 800, color: 'var(--teal)' }}>Stoqly</h1>
-        <p style={{ margin: '0 0 32px', color: 'var(--muted)', fontSize: 14 }}>Tu despensa inteligente</p>
+        <p style={{ margin: '0 0 32px', color: 'var(--muted)', fontSize: 14 }}>Tu asistente de hogar</p>
 
         <form onSubmit={submit}>
           <label style={labelStyle}>Email</label>

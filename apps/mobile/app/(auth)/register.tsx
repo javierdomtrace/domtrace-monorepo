@@ -64,7 +64,7 @@ export default function RegisterScreen() {
 
           <View style={styles.logoWrap}>
             <Text style={styles.logo}>Stoqly</Text>
-            <Text style={styles.tagline}>Tu despensa inteligente</Text>
+            <Text style={styles.tagline}>Tu asistente de hogar</Text>
           </View>
 
           {/* Step indicators */}

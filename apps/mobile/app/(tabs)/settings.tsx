@@ -60,7 +60,7 @@ export default function SettingsScreen() {
 
       {/* Version */}
       <View style={styles.version}>
-        <Text style={styles.versionText}>Stoqly v1.0.0 · Tu despensa inteligente</Text>
+        <Text style={styles.versionText}>Stoqly v1.0.0 · Tu asistente de hogar</Text>
       </View>
 
       {/* Logout */}

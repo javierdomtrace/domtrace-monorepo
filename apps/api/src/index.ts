@@ -25,6 +25,7 @@ import { babyFeedingsRoutes } from './routes/baby-feedings.js'
 import { babyMeasurementsRoutes } from './routes/baby-measurements.js'
 import { inviteRoutes } from './routes/invites.js'
 import { ocrRoutes } from './routes/ocr.js'
+import { calendarRoutes } from './routes/calendar.js'
 
 const app = Fastify({ logger: { level: process.env.NODE_ENV === 'production' ? 'warn' : 'info' } })
 
@@ -69,6 +70,7 @@ await app.register(babyFeedingsRoutes, v1)
 await app.register(babyMeasurementsRoutes, v1)
 await app.register(inviteRoutes, v1)
 await app.register(ocrRoutes, v1)        // OCR de etiquetas (Claude Vision: fecha + lote)
+await app.register(calendarRoutes, v1)   // Calendario familiar
 
 // ── Health check ─────────────────────────────────────────────────────
 app.get('/health', async () => ({ status: 'ok', ts: new Date().toISOString() }))

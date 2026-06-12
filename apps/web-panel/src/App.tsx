@@ -23,6 +23,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { AcceptInvitePage } from './pages/AcceptInvitePage'
 import { AccessibilityPage } from './pages/AccessibilityPage'
+import { CalendarPage } from './pages/CalendarPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuth(s => s.user)
@@ -42,6 +43,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/supplements': 'Suplementos — Stoqly',
   '/medications': 'Medicamentos — Stoqly',
   '/baby':        'Bebés — Stoqly',
+  '/calendar':    'Calendario — Stoqly',
   '/settings':    'Ajustes — Stoqly',
   '/accesibilidad': 'Declaración de accesibilidad — Stoqly',
 }
@@ -111,6 +113,7 @@ export default function App() {
           <Route path="supplements" element={<SupplementsPage />} />
           <Route path="medications" element={<MedicationsPage />} />
           <Route path="baby" element={<BabyPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
         </Route>
       </Routes>
     </A11yClasses>

@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, ShoppingCart, Bell, Package, LogOut,
   Settings, ChefHat, PackagePlus, Zap, Home, ChevronDown, Plus, Check, Sparkles, Pill, Stethoscope, Baby,
-  Menu, X,
+  Menu, X, Calendar,
 } from 'lucide-react'
 import { useAuth } from '../store/auth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -30,6 +30,7 @@ const nav = [
   { to: '/supplements',icon: Pill,            label: 'Suplementos' },
   { to: '/medications',icon: Stethoscope,     label: 'Medicamentos' },
   { to: '/baby',       icon: Baby,            label: 'Bebés' },
+  { to: '/calendar',   icon: Calendar,        label: 'Calendario' },
   { to: '/settings',   icon: Settings,        label: 'Ajustes' },
 ]
 
