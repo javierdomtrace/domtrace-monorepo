@@ -93,13 +93,13 @@ export function EditItemModal({ item, onClose }: EditItemModalProps) {
         {/* Cantidad con +/- */}
         <label style={lbl}>Cantidad</label>
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
-          <button onClick={() => adjustQty(-1)} style={qtyBtn}><Minus size={14} /></button>
+          <button onClick={() => adjustQty(-1)} style={qtyBtn} aria-label="Disminuir cantidad"><Minus size={14} /></button>
           <input
             type="number" min="0.1" step="0.1"
             value={quantity} onChange={e => setQuantity(e.target.value)}
             style={{ ...inp, flex: 1, marginBottom: 0, textAlign: 'center' }}
           />
-          <button onClick={() => adjustQty(1)} style={qtyBtn}><Plus size={14} /></button>
+          <button onClick={() => adjustQty(1)} style={qtyBtn} aria-label="Aumentar cantidad"><Plus size={14} /></button>
           <select value={unit} onChange={e => setUnit(e.target.value)}
             style={{ ...inp, marginBottom: 0, width: 80, cursor: 'pointer' }}>
             {UNITS.map(u => <option key={u} value={u}>{u}</option>)}

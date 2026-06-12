@@ -71,7 +71,8 @@ function CosmeticBarcodeScanner({ onFound, onClose }: {
             <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Escanear cosmético</span>
           </div>
           <button onClick={() => { scannerRef.current?.stop().catch(() => {}); onClose() }}
-            style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>
+            style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}
+            aria-label="Cerrar escáner">
             <X size={18} />
           </button>
         </div>
@@ -398,7 +399,7 @@ export function CosmeticsPage() {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Nuevo cosmético</h3>
-            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }} aria-label="Cerrar formulario">
               <X size={18} />
             </button>
           </div>

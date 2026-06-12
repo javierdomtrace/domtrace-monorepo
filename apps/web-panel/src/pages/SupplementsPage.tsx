@@ -337,19 +337,20 @@ function SupplementCard({ item, expanded, onToggle, onConsume, onRestock, onDisc
         {/* Acciones rápidas */}
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           <button
-            onClick={onConsume} title="Consumir 1 unidad"
+            onClick={onConsume} title="Consumir 1 unidad" aria-label="Consumir 1 unidad"
             style={{ ...iconBtn, background: 'rgba(29,158,117,0.1)', color: '#1D9E75' }}
           >
             <Minus size={14} />
           </button>
           <button
-            onClick={onRestock} title="Reponer +30"
+            onClick={onRestock} title="Reponer +30" aria-label="Reponer +30"
             style={{ ...iconBtn, background: 'rgba(127,119,221,0.1)', color: '#7F77DD' }}
           >
             <Plus size={14} />
           </button>
           <button
             onClick={onToggle}
+            aria-label={expanded ? 'Ocultar detalles' : 'Ver detalles'} aria-expanded={expanded}
             style={{ ...iconBtn, background: 'var(--bg)', color: 'var(--muted)' }}
           >
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -533,7 +534,8 @@ function SupplementBarcodeScanner({
             <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Escanear suplemento</span>
           </div>
           <button onClick={() => { scannerRef.current?.stop().catch(() => {}); onClose() }}
-            style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>
+            style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}
+            aria-label="Cerrar escáner">
             <X size={18} />
           </button>
         </div>

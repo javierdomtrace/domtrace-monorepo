@@ -361,7 +361,7 @@ Para CADA producto (por su índice numérico exacto del 0 al ${queue.length - 1}
               inputMode="numeric"
               style={{ ...inp, marginBottom: 0, flex: 1 }}
             />
-            <button onClick={() => addByBarcode(barcodeInput)} style={btnSmall}>+</button>
+            <button onClick={() => addByBarcode(barcodeInput)} style={btnSmall} aria-label="Añadir por código de barras">+</button>
           </div>
         </div>
         {/* Nombre manual */}
@@ -375,7 +375,7 @@ Para CADA producto (por su índice numérico exacto del 0 al ${queue.length - 1}
               placeholder="Ej: Aceite de oliva..."
               style={{ ...inp, marginBottom: 0, flex: 1 }}
             />
-            <button onClick={addByName} style={btnSmall}>+</button>
+            <button onClick={addByName} style={btnSmall} aria-label="Añadir por nombre">+</button>
           </div>
         </div>
       </div>
@@ -606,6 +606,7 @@ function QueueCard({ item, zones, expanded, onToggle, onUpdate, onRemove, onSave
           <button
             onClick={() => onUpdate({ action: item.action === 'skip' ? 'new' : 'skip' })}
             title={item.action === 'skip' ? 'Incluir' : 'Omitir'}
+            aria-label={item.action === 'skip' ? 'Incluir' : 'Omitir'}
             style={{
               background: 'none', border: 'none', cursor: 'pointer', padding: 4,
               color: item.action === 'skip' ? 'var(--teal)' : 'var(--muted)',
@@ -614,11 +615,11 @@ function QueueCard({ item, zones, expanded, onToggle, onUpdate, onRemove, onSave
             {item.action === 'skip' ? <CheckCircle size={16} /> : <span style={{ fontSize: 14 }}>✕</span>}
           </button>
           {/* Editar / expandir */}
-          <button onClick={onToggle} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--muted)' }}>
+          <button onClick={onToggle} aria-label={expanded ? 'Contraer detalles' : 'Editar detalles'} aria-expanded={expanded} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--muted)' }}>
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
           {/* Eliminar */}
-          <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--muted)' }}>
+          <button onClick={onRemove} aria-label="Eliminar producto" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--muted)' }}>
             <Trash2 size={14} />
           </button>
         </div>

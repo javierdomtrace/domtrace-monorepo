@@ -281,7 +281,7 @@ export function BabyPage() {
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => deleteFeeding.mutate(f.id)} style={iconBtn}><Trash2 size={14} /></button>
+                  <button onClick={() => deleteFeeding.mutate(f.id)} style={iconBtn} aria-label="Eliminar toma"><Trash2 size={14} /></button>
                 </div>
               ))}
             </div>
@@ -316,7 +316,7 @@ export function BabyPage() {
                       {formatDate(m.measuredAt)}{m.notes ? ` · ${m.notes}` : ''}
                     </div>
                   </div>
-                  <button onClick={() => deleteMeasurement.mutate(m.id)} style={iconBtn}><Trash2 size={14} /></button>
+                  <button onClick={() => deleteMeasurement.mutate(m.id)} style={iconBtn} aria-label="Eliminar medición"><Trash2 size={14} /></button>
                 </div>
               ))}
             </div>

@@ -395,8 +395,8 @@ export function SettingsPage() {
                     style={{ ...inp, width: 50, marginBottom: 0, textAlign: 'center', fontSize: 18 }} />
                   <input value={editingZone.name} onChange={e => setEditingZone({ ...editingZone, name: e.target.value })}
                     style={{ ...inp, flex: 1, marginBottom: 0 }} />
-                  <button onClick={() => updateZone.mutate(editingZone)} style={btnSmallPri}>✓</button>
-                  <button onClick={() => setEditingZone(null)} style={btnSmallSec}>✕</button>
+                  <button onClick={() => updateZone.mutate(editingZone)} style={btnSmallPri} aria-label="Guardar zona">✓</button>
+                  <button onClick={() => setEditingZone(null)} style={btnSmallSec} aria-label="Cancelar edición">✕</button>
                 </div>
               ) : (
                 <div key={z.id} style={{
@@ -405,8 +405,8 @@ export function SettingsPage() {
                 }}>
                   <span style={{ fontSize: 18 }}>{z.icon}</span>
                   <span style={{ flex: 1, fontSize: 14, color: 'var(--text)' }}>{z.name}</span>
-                  <button onClick={() => setEditingZone(z)} style={btnIcon}><Pencil size={13} /></button>
-                  <button onClick={() => deleteZone.mutate(z.id)} style={{ ...btnIcon, color: 'var(--danger)' }}><Trash2 size={13} /></button>
+                  <button onClick={() => setEditingZone(z)} style={btnIcon} aria-label={`Editar zona ${z.name}`}><Pencil size={13} /></button>
+                  <button onClick={() => deleteZone.mutate(z.id)} style={{ ...btnIcon, color: 'var(--danger)' }} aria-label={`Eliminar zona ${z.name}`}><Trash2 size={13} /></button>
                 </div>
               )
             ))}
@@ -419,7 +419,7 @@ export function SettingsPage() {
                 placeholder="Nombre de la zona" style={{ ...inp, flex: 1, marginBottom: 0 }}
                 onKeyDown={e => e.key === 'Enter' && newZoneName && addZone.mutate()} />
               <button onClick={() => newZoneName && addZone.mutate()} style={btnSmallPri}>Añadir</button>
-              <button onClick={() => setShowAddZone(false)} style={btnSmallSec}>✕</button>
+              <button onClick={() => setShowAddZone(false)} style={btnSmallSec} aria-label="Cancelar">✕</button>
             </div>
           ) : (
             <button onClick={() => setShowAddZone(true)} style={{
@@ -448,7 +448,7 @@ export function SettingsPage() {
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>{m.email} · {m.role}</div>
             </div>
             {m.id !== data.user.id && (
-              <button onClick={() => removeMember.mutate(m.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}>
+              <button onClick={() => removeMember.mutate(m.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} aria-label={`Eliminar a ${m.name} del hogar`}>
                 <Trash2 size={15} />
               </button>
             )}
@@ -554,7 +554,7 @@ export function SettingsPage() {
             <input value={newAllergen} onChange={e => setNewAllergen(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && addAllergenPersonal()}
               placeholder="Ej: Frutas tropicales, Castañas, Apio..." style={{ ...inp, flex: 1, marginBottom: 0 }} />
-            <button onClick={addAllergenPersonal} disabled={!newAllergen.trim()} style={{
+            <button onClick={addAllergenPersonal} disabled={!newAllergen.trim()} aria-label="Añadir alergia personalizada" style={{
               padding: '10px 14px', background: '#EF9F27', border: 'none', borderRadius: 10,
               color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: !newAllergen.trim() ? 0.5 : 1,
             }}>
@@ -569,7 +569,7 @@ export function SettingsPage() {
                   borderRadius: 20, background: 'rgba(239,159,39,0.12)', border: '1px solid #EF9F27',
                 }}>
                   <span style={{ fontSize: 13, color: '#EF9F27' }}>{a}</span>
-                  <button onClick={() => removeAllergenPersonal(a)} style={{ background: 'none', border: 'none', color: '#EF9F27', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                  <button onClick={() => removeAllergenPersonal(a)} style={{ background: 'none', border: 'none', color: '#EF9F27', cursor: 'pointer', padding: 0, display: 'flex' }} aria-label={`Quitar alergia ${a}`}>
                     <X size={13} />
                   </button>
                 </div>
@@ -698,6 +698,7 @@ export function SettingsPage() {
                     <button
                       onClick={() => deleteHousehold.mutate(h.id)}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: 0 }}
+                      aria-label={`Eliminar hogar ${h.name}`}
                     >
                       <Trash2 size={14} />
                     </button>

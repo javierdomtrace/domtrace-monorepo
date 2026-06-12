@@ -205,6 +205,7 @@ function Toggle({
         id={id}
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={onChange}
         style={{
           width: 40, height: 22, borderRadius: 11, border: 'none',

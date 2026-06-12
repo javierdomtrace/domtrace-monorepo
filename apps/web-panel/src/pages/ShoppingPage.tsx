@@ -432,7 +432,7 @@ Responde ÚNICAMENTE con JSON:
             style={{ flex: 1, padding: '10px 14px', background: 'var(--surface)', border: '1px solid var(--teal)', borderRadius: 10, color: 'var(--text)', fontSize: 14, outline: 'none' }}
           />
           <button onClick={() => newItem && add.mutate({ name: newItem })} style={btnPrimary}>Añadir</button>
-          <button onClick={() => setAdding(false)} style={btnSec}>✕</button>
+          <button onClick={() => setAdding(false)} style={btnSec} aria-label="Cancelar">✕</button>
         </div>
       )}
 
@@ -489,7 +489,7 @@ Responde ÚNICAMENTE con JSON:
                         padding: '11px 14px', borderBottom: '1px solid var(--border)',
                         opacity: item.checked ? 0.4 : 1,
                       }}>
-                        <button onClick={() => check.mutate(item.id)} style={{
+                        <button onClick={() => check.mutate(item.id)} role="checkbox" aria-checked={item.checked} aria-label={`Marcar ${item.name} como comprado`} style={{
                           width: 22, height: 22, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
                           border: item.checked ? 'none' : '2px solid var(--border)',
                           background: item.checked ? 'var(--teal)' : 'transparent',
@@ -520,7 +520,7 @@ Responde ÚNICAMENTE con JSON:
                             }}
                           />
                         </div>
-                        <button onClick={() => remove.mutate(item.id)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: 4 }}>
+                        <button onClick={() => remove.mutate(item.id)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: 4 }} aria-label={`Eliminar ${item.name} de la lista`}>
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -651,6 +651,7 @@ Responde ÚNICAMENTE con JSON:
                       {/* Checkbox */}
                       <button
                         onClick={() => setProposal(p => p.map(i => i.tempId === item.tempId ? { ...i, discarded: !i.discarded } : i))}
+                        role="checkbox" aria-checked={!item.discarded} aria-label={`Incluir ${item.name} en la lista`}
                         style={{
                           width: 22, height: 22, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
                           border: item.discarded ? '2px solid var(--border)' : 'none',
@@ -687,6 +688,7 @@ Responde ÚNICAMENTE con JSON:
                         onClick={() => setProposal(p => p.map(i => i.tempId === item.tempId ? { ...i, discarded: !i.discarded } : i))}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--muted)', flexShrink: 0 }}
                         title={item.discarded ? 'Recuperar' : 'Descartar'}
+                        aria-label={item.discarded ? `Recuperar ${item.name}` : `Descartar ${item.name}`}
                       >
                         {item.discarded ? <Plus size={14} /> : <X size={14} />}
                       </button>

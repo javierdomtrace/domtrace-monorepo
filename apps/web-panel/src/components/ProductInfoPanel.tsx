@@ -48,6 +48,7 @@ export function ProductInfoPanel({ barcode }: { barcode: string }) {
     <div style={{ marginTop: 4 }}>
       <button
         onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
         style={{
           display: 'flex', alignItems: 'center', gap: 4,
           background: 'none', border: 'none', cursor: 'pointer',

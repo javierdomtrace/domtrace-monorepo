@@ -398,21 +398,21 @@ function MedicationCard({ item, expanded, onToggle, onConsume, onRestock, onDisc
         {/* Acciones */}
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           {item.expired ? (
-            <button onClick={() => onFindPharmacy('sigre')} title="Llevar al SIGRE"
+            <button onClick={() => onFindPharmacy('sigre')} title="Llevar al SIGRE" aria-label="Llevar al SIGRE"
               style={{ ...iconBtn, background: 'rgba(226,75,74,0.1)', color: '#E24B4A' }}>
               <Recycle size={14} />
             </button>
           ) : (
-            <button onClick={onConsume} title="Consumir 1"
+            <button onClick={onConsume} title="Consumir 1" aria-label="Consumir 1"
               style={{ ...iconBtn, background: 'rgba(127,119,221,0.1)', color: '#7F77DD' }}>
               <Minus size={14} />
             </button>
           )}
-          <button onClick={() => item.lowStock ? onFindPharmacy('restock') : onRestock()} title={item.lowStock ? 'Buscar farmacia' : 'Reponer +20'}
+          <button onClick={() => item.lowStock ? onFindPharmacy('restock') : onRestock()} title={item.lowStock ? 'Buscar farmacia' : 'Reponer +20'} aria-label={item.lowStock ? 'Buscar farmacia' : 'Reponer +20'}
             style={{ ...iconBtn, background: item.lowStock ? 'rgba(239,159,39,0.1)' : 'rgba(29,158,117,0.1)', color: item.lowStock ? '#EF9F27' : '#1D9E75' }}>
             {item.lowStock ? <MapPin size={14} /> : <Plus size={14} />}
           </button>
-          <button onClick={onToggle}
+          <button onClick={onToggle} aria-label={expanded ? 'Ocultar detalles' : 'Ver detalles'} aria-expanded={expanded}
             style={{ ...iconBtn, background: 'var(--bg)', color: 'var(--muted)' }}>
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
@@ -544,7 +544,7 @@ function PharmacyPanel({
                 </div>
               )}
             </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', flexShrink: 0, marginLeft: 12 }}>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', flexShrink: 0, marginLeft: 12 }} aria-label="Cerrar">
               <X size={18} />
             </button>
           </div>
@@ -732,7 +732,8 @@ function MedicationBarcodeScanner({
             <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Escanear medicamento</span>
           </div>
           <button onClick={() => { scannerRef.current?.stop().catch(() => {}); onClose() }}
-            style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>
+            style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}
+            aria-label="Cerrar escáner">
             <X size={18} />
           </button>
         </div>
