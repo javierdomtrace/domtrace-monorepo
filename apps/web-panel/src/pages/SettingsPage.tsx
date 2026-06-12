@@ -55,6 +55,7 @@ export function SettingsPage() {
   const { user } = useAuth()
   const tier = user?.subscriptionTier ?? 'FREE'
   const [saved, setSaved] = useState(false)
+  const [editing, setEditing] = useState(false)
   const [newHouseholdName, setNewHouseholdName] = useState('')
   const [showAddHousehold, setShowAddHousehold] = useState(false)
   const [householdMsg, setHouseholdMsg] = useState('')
@@ -178,6 +179,7 @@ export function SettingsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['profile'] })
       setSaved(true)
+      setEditing(false)
       setTimeout(() => setSaved(false), 2500)
     },
     onError: (err: any) => {
@@ -232,31 +234,55 @@ export function SettingsPage() {
 
   if (isLoading) return <div style={{ color: 'var(--muted)', padding: 40 }}>Cargando...</div>
 
+  // Botón Editar / Guardar cambios (se usa arriba y abajo de la página)
+  const EditSaveButton = () => (
+    editing ? (
+      <button onClick={() => saveProfile.mutate()} disabled={saveProfile.isPending} style={{
+        display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
+        background: saved ? '#0F6E56' : '#1D9E75', border: 'none', borderRadius: 10,
+        color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+      }}>
+        <Save size={15} /> {saved ? '¡Guardado!' : saveProfile.isPending ? 'Guardando...' : 'Guardar cambios'}
+      </button>
+    ) : (
+      <button onClick={() => setEditing(true)} style={{
+        display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
+        background: 'transparent', border: '1px solid #1D9E75', borderRadius: 10,
+        color: '#1D9E75', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+      }}>
+        <Pencil size={15} /> Editar
+      </button>
+    )
+  )
+
   return (
     <div style={{ maxWidth: 680 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Configuración</h1>
-        <button onClick={() => saveProfile.mutate()} disabled={saveProfile.isPending} style={{
-          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
-          background: saved ? '#0F6E56' : '#1D9E75', border: 'none', borderRadius: 10,
-          color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-        }}>
-          <Save size={15} /> {saved ? '¡Guardado!' : saveProfile.isPending ? 'Guardando...' : 'Guardar cambios'}
-        </button>
+        <EditSaveButton />
       </div>
+
+      {/* Pulsa «Editar» para modificar los datos de esta página */}
+      {!editing && (
+        <p style={{ fontSize: 12, color: 'var(--muted)', margin: '-20px 0 16px' }}>
+          Pulsa «Editar» para modificar tus datos.
+        </p>
+      )}
+
+      <div style={editGate(editing)}>
 
       {/* 1 — Mi cuenta */}
       <Section icon={<User size={16} />} title="Mi cuenta">
         <Field label="Tu nombre">
-          <input value={userName} onChange={e => setUserName(e.target.value)} style={inp} />
+          <input value={userName} onChange={e => setUserName(e.target.value)} disabled={!editing} style={inp} />
         </Field>
         <Field label="Email">
           <input value={data?.user.email ?? ''} disabled style={{ ...inp, opacity: 0.5 }} />
         </Field>
         <Field label="Código postal">
           <input value={codigoPostal} onChange={e => setCodigoPostal(e.target.value.replace(/\D/g, '').slice(0, 5))}
-            placeholder="Ej: 28001" maxLength={5} style={{ ...inp, maxWidth: 140 }} />
+            disabled={!editing} placeholder="Ej: 28001" maxLength={5} style={{ ...inp, maxWidth: 140 }} />
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: '-10px 0 0' }}>
             Para localizar el Banco de Alimentos y la farmacia SIGRE más cercanos.
           </p>
@@ -265,6 +291,7 @@ export function SettingsPage() {
 
       {/* 2 — Perfil nutricional (opcional) */}
       <NutritionalSection
+        editing={editing}
         pesoKg={pesoKg} setPesoKg={setPesoKg}
         alturaCm={alturaCm} setAlturaCm={setAlturaCm}
         edadAnos={edadAnos} setEdadAnos={setEdadAnos}
@@ -274,6 +301,7 @@ export function SettingsPage() {
 
       {/* 3 — Actividad física */}
       <SportSection
+        editing={editing}
         deporte={deporte} setDeporte={setDeporte}
         deporteNivel={deporteNivel} setDeporteNivel={setDeporteNivel}
         deporteDiasSemana={deporteDiasSemana} setDeporteDiasSemana={setDeporteDiasSemana}
@@ -313,7 +341,7 @@ export function SettingsPage() {
       {/* 4 — Mi hogar */}
       <Section icon={<Home size={16} />} title="Mi hogar">
         <Field label="Nombre del hogar">
-          <input value={householdName} onChange={e => setHouseholdName(e.target.value)} style={inp} />
+          <input value={householdName} onChange={e => setHouseholdName(e.target.value)} disabled={!editing} style={inp} />
         </Field>
         <Field label="Supermercado principal">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -334,25 +362,25 @@ export function SettingsPage() {
             Donde el supermercado debe enviarte la compra cuando hagas un pedido.
           </p>
           <Field label="Nombre del destinatario">
-            <input value={dirNombre} onChange={e => setDirNombre(e.target.value)} placeholder="Ej: Javier Torres" style={inp} />
+            <input value={dirNombre} onChange={e => setDirNombre(e.target.value)} disabled={!editing} placeholder="Ej: Javier Torres" style={inp} />
           </Field>
           <Field label="Calle y número">
-            <input value={dirCalle} onChange={e => setDirCalle(e.target.value)} placeholder="Ej: Calle Mayor, 14" style={inp} />
+            <input value={dirCalle} onChange={e => setDirCalle(e.target.value)} disabled={!editing} placeholder="Ej: Calle Mayor, 14" style={inp} />
           </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 10 }}>
             <Field label="Piso/Puerta">
-              <input value={dirPiso} onChange={e => setDirPiso(e.target.value)} placeholder="Ej: 3ºB" style={{ ...inp, marginBottom: 0 }} />
+              <input value={dirPiso} onChange={e => setDirPiso(e.target.value)} disabled={!editing} placeholder="Ej: 3ºB" style={{ ...inp, marginBottom: 0 }} />
             </Field>
             <Field label="Ciudad">
-              <input value={dirCiudad} onChange={e => setDirCiudad(e.target.value)} placeholder="Ej: Madrid" style={{ ...inp, marginBottom: 0 }} />
+              <input value={dirCiudad} onChange={e => setDirCiudad(e.target.value)} disabled={!editing} placeholder="Ej: Madrid" style={{ ...inp, marginBottom: 0 }} />
             </Field>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 10, marginTop: 14 }}>
             <Field label="Código postal">
-              <input value={dirCP} onChange={e => setDirCP(e.target.value.replace(/\D/g, '').slice(0, 5))} placeholder="28001" maxLength={5} style={{ ...inp, marginBottom: 0 }} />
+              <input value={dirCP} onChange={e => setDirCP(e.target.value.replace(/\D/g, '').slice(0, 5))} disabled={!editing} placeholder="28001" maxLength={5} style={{ ...inp, marginBottom: 0 }} />
             </Field>
             <Field label="Teléfono de contacto">
-              <input value={dirTelefono} onChange={e => setDirTelefono(e.target.value)} placeholder="Ej: 612 345 678" style={{ ...inp, marginBottom: 0 }} />
+              <input value={dirTelefono} onChange={e => setDirTelefono(e.target.value)} disabled={!editing} placeholder="Ej: 612 345 678" style={{ ...inp, marginBottom: 0 }} />
             </Field>
           </div>
         </Field>
@@ -604,6 +632,9 @@ export function SettingsPage() {
         </div>
       </Section>
 
+      </div>
+      {/* fin del área editable */}
+
       {/* 9 — Mis domicilios */}
       <Section icon={<Home size={16} />} title="Mis domicilios">
         {tier === 'FREE' ? (
@@ -731,6 +762,11 @@ export function SettingsPage() {
           Compara todos los planes y sus características en la página de Planes.
         </p>
       </Section>
+
+      {/* Botón de guardado al final de la página, para no tener que volver arriba */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, marginBottom: 24 }}>
+        <EditSaveButton />
+      </div>
     </div>
   )
 }
@@ -761,9 +797,11 @@ function calcKcal(peso: number, altura: number, edad: number, actividad: string,
 }
 
 function NutritionalSection({
+  editing,
   pesoKg, setPesoKg, alturaCm, setAlturaCm, edadAnos, setEdadAnos,
   nivelActividad, setNivelActividad, objetivoNutricional, setObjetivoNutricional,
 }: {
+  editing: boolean
   pesoKg: string; setPesoKg: (v: string) => void
   alturaCm: string; setAlturaCm: (v: string) => void
   edadAnos: string; setEdadAnos: (v: string) => void
@@ -805,7 +843,7 @@ function NutritionalSection({
       </div>
 
       {open && (
-        <div style={{ marginTop: 18 }}>
+        <div style={{ marginTop: 18, ...editGate(editing) }}>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 16px' }}>
             Si rellenas estos datos, Vicky podrá orientarte sobre qué comer según tu objetivo — calorías, proteínas, qué tienes en casa que encaja. Es completamente opcional.
           </p>
@@ -814,21 +852,21 @@ function NutritionalSection({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
             <Field label="Peso (kg)">
               <input
-                type="number" value={pesoKg} onChange={e => setPesoKg(e.target.value)}
+                type="number" value={pesoKg} onChange={e => setPesoKg(e.target.value)} disabled={!editing}
                 placeholder="Ej: 75" min={30} max={250}
                 style={{ ...inp, marginBottom: 0 }}
               />
             </Field>
             <Field label="Altura (cm)">
               <input
-                type="number" value={alturaCm} onChange={e => setAlturaCm(e.target.value)}
+                type="number" value={alturaCm} onChange={e => setAlturaCm(e.target.value)} disabled={!editing}
                 placeholder="Ej: 175" min={100} max={250}
                 style={{ ...inp, marginBottom: 0 }}
               />
             </Field>
             <Field label="Edad">
               <input
-                type="number" value={edadAnos} onChange={e => setEdadAnos(e.target.value)}
+                type="number" value={edadAnos} onChange={e => setEdadAnos(e.target.value)} disabled={!editing}
                 placeholder="Ej: 35" min={10} max={120}
                 style={{ ...inp, marginBottom: 0 }}
               />
@@ -924,8 +962,10 @@ const DEPORTE_NIVEL_OPTS = [
 ]
 
 function SportSection({
+  editing,
   deporte, setDeporte, deporteNivel, setDeporteNivel, deporteDiasSemana, setDeporteDiasSemana,
 }: {
+  editing: boolean
   deporte: string; setDeporte: (v: string) => void
   deporteNivel: string; setDeporteNivel: (v: string) => void
   deporteDiasSemana: string; setDeporteDiasSemana: (v: string) => void
@@ -952,7 +992,7 @@ function SportSection({
       </div>
 
       {open && (
-        <div style={{ marginTop: 18 }}>
+        <div style={{ marginTop: 18, ...editGate(editing) }}>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 16px' }}>
             Con esta información Stoqly puede ayudarte mejor: suplementos adecuados para tu deporte, hidratación, recuperación, o qué comer antes y después de entrenar.
           </p>
@@ -961,6 +1001,7 @@ function SportSection({
             <input
               value={deporte}
               onChange={e => setDeporte(e.target.value)}
+              disabled={!editing}
               placeholder="Ej: Running, Crossfit, Ciclismo, Natación, Gym..."
               style={{ ...inp, maxWidth: 360 }}
             />
@@ -1058,6 +1099,13 @@ const inp: React.CSSProperties = {
   border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)',
   fontSize: 14, marginBottom: 14, boxSizing: 'border-box', outline: 'none',
 }
+
+// Atenúa y bloquea la interacción de los campos cuando no se está en modo edición
+const editGate = (editing: boolean): React.CSSProperties => ({
+  opacity: editing ? 1 : 0.55,
+  pointerEvents: editing ? 'auto' : 'none',
+  transition: 'opacity 0.15s',
+})
 const btnSmallPri: React.CSSProperties = { padding: '8px 12px', background: '#1D9E75', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }
 const btnSmallSec: React.CSSProperties = { padding: '8px 12px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--muted)', fontSize: 13, cursor: 'pointer' }
 const btnIcon: React.CSSProperties = { background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: 4, display: 'flex', borderRadius: 4 }
