@@ -24,7 +24,8 @@
     "plugins": [
       "expo-router",
       "expo-camera",
-      "./plugins/withFixHermesCommand.js"
+      "./plugins/withFixHermesCommand.js",
+      "expo-status-bar"
     ],
     "scheme": "stoqly",
     "web": {
