@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  hermes-compiler: 250829098.0.1
+
 pnpmfileChecksum: aulcutffxvnoqeehnccggtvol4
 
 importers:
