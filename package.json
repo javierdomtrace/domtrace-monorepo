@@ -22,7 +22,7 @@
   ],
   "pnpm": {
     "overrides": {
-      "hermes-compiler": "250829098.0.1"
+      "hermes-compiler": "250829098.0.2"
     }
   }
 }
