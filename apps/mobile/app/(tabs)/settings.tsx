@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, StyleSheet, Switch } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, StyleSheet, Switch, Vibration, Linking } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuth } from '@/store/auth'
@@ -31,6 +31,28 @@ const TEXT_SIZE_OPTS = [
   { key: 'LARGE', label: 'Grande' },
   { key: 'XLARGE', label: 'Muy grande' },
 ]
+
+// Patrones de vibración (igual que en el panel web)
+const VIBRATION_PATTERNS: Record<string, number[]> = {
+  URGENT: [100, 50, 100, 50, 100, 100, 300],
+  ALERT: [100, 50, 100],
+  CONFIRM: [50],
+  ERROR: [300, 100, 300],
+  STOQLY: [50, 30, 50, 30, 50],
+  BABY: [80, 30, 80, 30, 80, 30, 80],
+}
+
+const VIBRATION_OPTS = [
+  { key: 'URGENT', icon: '🚨', label: 'Alerta urgente', desc: '3 cortos + 1 largo' },
+  { key: 'ALERT', icon: '⚠️', label: 'Alerta normal', desc: '2 pulsos cortos' },
+  { key: 'CONFIRM', icon: '✅', label: 'Confirmación', desc: '1 pulso suave' },
+  { key: 'ERROR', icon: '❌', label: 'Error', desc: '2 pulsos largos' },
+  { key: 'STOQLY', icon: '✦', label: 'Stoqly hablando', desc: '3 pulsos suaves' },
+  { key: 'BABY', icon: '👶', label: 'Alerta bebé', desc: '4 pulsos rápidos (máxima atención)' },
+]
+
+// URL del panel web para gestión de planes/suscripción (no disponible en la app)
+const PLANS_URL = 'https://app.stoqlyhome.com/plans'
 
 const SUPERMARKETS = ['Mercadona', 'Carrefour', 'Lidl', 'Aldi', 'El Corte Inglés', 'Alcampo', 'Dia', 'Consum', 'Eroski', 'Otro']
 
@@ -810,6 +832,31 @@ export default function SettingsScreen() {
         </Field>
         <ToggleRow label="Alto contraste" value={highContrast} onValueChange={setHighContrast} disabled={!editing} />
         <ToggleRow label="Reducir animaciones" value={reduceMotion} onValueChange={setReduceMotion} disabled={!editing} />
+
+        <Field label="Patrones de vibración">
+          <Text style={[styles.mutedText, { marginBottom: 8 }]}>
+            Cada tipo de alerta tiene un patrón de vibración distinto y reconocible. Pulsa para probarlos.
+          </Text>
+          {VIBRATION_OPTS.map(p => (
+            <View key={p.key} style={styles.vibRow}>
+              <Text style={{ fontSize: 18, width: 28 }}>{p.icon}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.vibLabel}>{p.label}</Text>
+                <Text style={styles.vibDesc}>{p.desc}</Text>
+              </View>
+              <TouchableOpacity onPress={() => Vibration.vibrate(VIBRATION_PATTERNS[p.key])} style={styles.vibBtn}>
+                <Text style={styles.vibBtnText}>Probar</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </Field>
+
+        <View style={styles.onceBox}>
+          <Text style={styles.onceTitle}>🎯 Objetivo: certificación ONCE</Text>
+          <Text style={styles.mutedText}>
+            Estamos trabajando para que Stoqly sea totalmente accesible según los estándares de la ONCE, incluyendo compatibilidad con lectores de pantalla (VoiceOver, TalkBack), navegación completa y estos patrones de vibración para usuarios con discapacidad visual.
+          </Text>
+        </View>
       </Section>
 
       {/* 8 — Mis domicilios */}
@@ -818,8 +865,11 @@ export default function SettingsScreen() {
           <View style={styles.upsellBox}>
             <Text style={styles.upsellTitle}>Gestiona varios domicilios</Text>
             <Text style={styles.mutedText}>
-              ¿Tienes segunda casa? Con el plan Hogar puedes gestionar despensas separadas y saber qué tienes en cada una. Consulta los planes en app.stoqlyhome.com.
+              ¿Tienes segunda casa? Con el plan Hogar puedes gestionar despensas separadas y saber qué tienes en cada una.
             </Text>
+            <TouchableOpacity onPress={() => Linking.openURL(PLANS_URL)} style={styles.plansBtn}>
+              <Text style={styles.plansBtnText}>⚡ Ver planes</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <>
@@ -836,7 +886,7 @@ export default function SettingsScreen() {
                     <TouchableOpacity onPress={() => setActiveHousehold.mutate(h.id)} style={{ marginLeft: 8 }}>
                       <Text style={{ color: theme.muted, fontSize: 12 }}>Activar</Text>
                     </TouchableOpacity>
-                    {h.role === 'OWNER' && editing && (
+                    {h.role === 'OWNER' && (
                       <TouchableOpacity onPress={() => deleteHousehold.mutate(h.id)} style={{ marginLeft: 8 }}>
                         <Text style={{ color: theme.danger }}>🗑</Text>
                       </TouchableOpacity>
@@ -846,18 +896,16 @@ export default function SettingsScreen() {
               </View>
             ))}
 
-            {editing && (
-              showAddHousehold ? (
-                <View style={styles.row2}>
-                  <Input value={newHouseholdName} onChangeText={setNewHouseholdName} editing placeholder="Nombre del domicilio (ej: Casa de la playa)" />
-                  <TouchableOpacity onPress={() => newHouseholdName && addHousehold.mutate()} disabled={!newHouseholdName || addHousehold.isPending}
-                    style={[styles.inviteBtn, (!newHouseholdName || addHousehold.isPending) && { opacity: 0.5 }]}>
-                    <Text style={styles.inviteBtnText}>Añadir</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <CollapsedAdd label="Añadir domicilio" onPress={() => { setShowAddHousehold(true); setHouseholdMsg('') }} />
-              )
+            {showAddHousehold ? (
+              <View style={styles.row2}>
+                <Input value={newHouseholdName} onChangeText={setNewHouseholdName} editing placeholder="Nombre del domicilio (ej: Casa de la playa)" />
+                <TouchableOpacity onPress={() => newHouseholdName && addHousehold.mutate()} disabled={!newHouseholdName || addHousehold.isPending}
+                  style={[styles.inviteBtn, (!newHouseholdName || addHousehold.isPending) && { opacity: 0.5 }]}>
+                  <Text style={styles.inviteBtnText}>Añadir</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <CollapsedAdd label="Añadir domicilio" onPress={() => { setShowAddHousehold(true); setHouseholdMsg('') }} />
             )}
           </>
         )}
@@ -870,9 +918,12 @@ export default function SettingsScreen() {
             <Text style={styles.mutedText}>Plan actual</Text>
             <Text style={styles.subscriptionTier}>{tier}</Text>
           </View>
+          <TouchableOpacity onPress={() => Linking.openURL(PLANS_URL)} style={[styles.plansBtn, { marginTop: 0 }]}>
+            <Text style={styles.plansBtnText}>⚡ {tier === 'FREE' ? 'Mejorar plan' : 'Gestionar plan'}</Text>
+          </TouchableOpacity>
         </View>
         <Text style={[styles.mutedText, { marginTop: 10 }]}>
-          Gestiona o mejora tu plan desde el panel web en app.stoqlyhome.com.
+          Compara todos los planes y sus características en app.stoqlyhome.com/plans.
         </Text>
       </Section>
 
@@ -965,6 +1016,18 @@ const styles = StyleSheet.create({
 
   subscriptionBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: theme.bg, borderWidth: 1, borderColor: theme.border, borderRadius: 12, padding: 14 },
   subscriptionTier:{ color: theme.brand, fontSize: 18, fontWeight: '800', marginTop: 2 },
+
+  plansBtn:     { backgroundColor: theme.teal, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center', marginTop: 12 },
+  plansBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+
+  vibRow:       { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: theme.bg, borderRadius: 10, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8 },
+  vibLabel:     { color: theme.text, fontSize: 13, fontWeight: '600' },
+  vibDesc:      { color: theme.muted, fontSize: 11, marginTop: 2 },
+  vibBtn:       { backgroundColor: 'rgba(78,205,196,0.1)', borderWidth: 1, borderColor: 'rgba(78,205,196,0.3)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  vibBtnText:   { color: theme.teal, fontSize: 12, fontWeight: '700' },
+
+  onceBox:      { marginTop: 12, backgroundColor: 'rgba(78,205,196,0.06)', borderWidth: 1, borderColor: 'rgba(78,205,196,0.2)', borderRadius: 10, padding: 14 },
+  onceTitle:    { color: theme.teal, fontSize: 13, fontWeight: '700', marginBottom: 4 },
 
   version:      { marginHorizontal: 20, marginBottom: 24, marginTop: 8 },
   versionText:  { color: theme.muted, fontSize: 12, textAlign: 'center' },
