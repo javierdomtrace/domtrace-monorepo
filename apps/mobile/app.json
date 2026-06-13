@@ -23,7 +23,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-camera"
+      "expo-camera",
+      "./plugins/withFixHermesCommand.js"
     ],
     "scheme": "stoqly",
     "web": {
