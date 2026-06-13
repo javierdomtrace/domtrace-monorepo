@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router'
 import { View, Text, Platform, StyleSheet } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { theme } from '@/theme'
 
 function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
@@ -31,6 +32,8 @@ function StoqlyTabIcon({ focused }: { focused: boolean }) {
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets()
+
   return (
     <Tabs
       screenOptions={{
@@ -40,8 +43,8 @@ export default function TabLayout() {
           backgroundColor: theme.surface,
           borderTopColor: theme.border,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 68,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          height: (Platform.OS === 'ios' ? 60 : 58) + insets.bottom,
+          paddingBottom: (Platform.OS === 'ios' ? 8 : 10) + insets.bottom,
           paddingTop: 8,
         },
       }}

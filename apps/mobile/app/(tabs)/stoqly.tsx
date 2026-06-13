@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import * as Haptics from 'expo-haptics'
 import * as Speech from 'expo-speech'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@/lib/api'
 import { useAuth } from '@/store/auth'
 import { theme } from '@/theme'
@@ -44,6 +45,7 @@ function TypingDots() {
 
 export default function StoqlyScreen() {
   const { user } = useAuth()
+  const insets = useSafeAreaInsets()
   const scrollRef = useRef<ScrollView>(null)
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -111,7 +113,7 @@ export default function StoqlyScreen() {
       keyboardVerticalOffset={0}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View>
           <Text style={styles.headerTitle}>✦ Stoqly</Text>
           <Text style={styles.headerSub}>Tu asistente de hogar</Text>
@@ -220,7 +222,7 @@ const styles = StyleSheet.create({
   screen:          { flex: 1, backgroundColor: theme.bg },
   flex1:           { flex: 1 },
   header:          {
-    paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12,
+    paddingHorizontal: 20, paddingBottom: 12,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderBottomWidth: 1, borderBottomColor: theme.border,
   },

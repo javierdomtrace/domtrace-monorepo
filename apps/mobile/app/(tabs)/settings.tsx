@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuth } from '@/store/auth'
 import { api } from '@/lib/api'
 import { theme } from '@/theme'
@@ -18,6 +19,7 @@ function SettingRow({ label, value, emoji }: { label: string; value?: string; em
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth()
+  const insets = useSafeAreaInsets()
 
   const { data: profile } = useQuery({
     queryKey: ['profile'],
@@ -31,7 +33,7 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.title}>Ajustes</Text>
       </View>
 
@@ -73,7 +75,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   screen:       { flex: 1, backgroundColor: theme.bg },
-  header:       { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 24 },
+  header:       { paddingHorizontal: 20, paddingBottom: 24 },
   title:        { color: theme.text, fontSize: 24, fontWeight: '900' },
   profileCard:  { marginHorizontal: 20, backgroundColor: theme.surface, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: theme.border, marginBottom: 24 },
   avatarWrap:   { width: 64, height: 64, borderRadius: 16, backgroundColor: 'rgba(29,158,117,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },

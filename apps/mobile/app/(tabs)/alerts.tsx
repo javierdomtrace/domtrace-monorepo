@@ -3,6 +3,7 @@ import {
 } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as Haptics from 'expo-haptics'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@/lib/api'
 import { theme } from '@/theme'
 
@@ -67,6 +68,7 @@ function AlertCard({ item, onConsume, onDiscard, onDonate }: {
 
 export default function AlertsScreen() {
   const qc = useQueryClient()
+  const insets = useSafeAreaInsets()
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['alerts'],
@@ -94,7 +96,7 @@ export default function AlertsScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.title}>Alertas</Text>
         <Text style={styles.subtitle}>{all.length} productos requieren atención</Text>
       </View>
@@ -151,7 +153,7 @@ export default function AlertsScreen() {
 const styles = StyleSheet.create({
   screen:       { flex: 1, backgroundColor: theme.bg },
   flex1:        { flex: 1 },
-  header:       { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
+  header:       { paddingHorizontal: 20, paddingBottom: 16 },
   title:        { color: theme.text, fontSize: 24, fontWeight: '900' },
   subtitle:     { color: theme.muted, fontSize: 14, marginTop: 4 },
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center' },

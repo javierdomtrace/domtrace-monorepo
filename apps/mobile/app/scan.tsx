@@ -4,6 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import { useRouter } from 'expo-router'
 import * as Haptics from 'expo-haptics'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@/lib/api'
 import { theme } from '@/theme'
 
@@ -12,6 +13,7 @@ interface OFFProduct { product_name?: string; brands?: string; allergens_tags?: 
 export default function ScanScreen() {
   const router = useRouter()
   const qc = useQueryClient()
+  const insets = useSafeAreaInsets()
   const [permission, requestPermission] = useCameraPermissions()
   const [scanned, setScanned] = useState(false)
   const [lookingUp, setLookingUp] = useState(false)
@@ -124,7 +126,7 @@ export default function ScanScreen() {
       </View>
 
       {/* Top bar */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
           <Text style={styles.closeBtnText}>✕</Text>
         </TouchableOpacity>
@@ -191,7 +193,7 @@ const styles = StyleSheet.create({
   viewfinderWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   viewfinder:     { width: '80%', aspectRatio: 1.8, borderWidth: 2, borderColor: theme.brand, borderRadius: 16 },
   corner:         { position: 'absolute', width: 24, height: 24, borderColor: theme.brand, borderRadius: 2 },
-  topBar:         { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 56, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  topBar:         { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   closeBtn:       { width: 40, height: 40, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   closeBtnText:   { color: '#fff', fontSize: 18 },
   topBarTitle:    { color: '#fff', fontWeight: '700', fontSize: 16 },

@@ -6,6 +6,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import * as Haptics from 'expo-haptics'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@/lib/api'
 import { useAuth } from '@/store/auth'
 import { theme } from '@/theme'
@@ -78,6 +79,7 @@ export default function PantryScreen() {
   const qc = useQueryClient()
   const { user } = useAuth()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [search, setSearch] = useState('')
 
   const { data: summary, isLoading, refetch, isRefetching } = useQuery({
@@ -105,7 +107,7 @@ export default function PantryScreen() {
   return (
     <View style={styles.screen}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerTop}>
           <View>
             <Text style={styles.greeting}>Buenos días,</Text>
@@ -225,7 +227,7 @@ export default function PantryScreen() {
 const styles = StyleSheet.create({
   screen:      { flex: 1, backgroundColor: theme.bg },
   flex1:       { flex: 1 },
-  header:      { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
+  header:      { paddingHorizontal: 20, paddingBottom: 16 },
   headerTop:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   greeting:    { color: theme.muted, fontSize: 14 },
   userName:    { color: theme.text, fontSize: 24, fontWeight: '900' },
