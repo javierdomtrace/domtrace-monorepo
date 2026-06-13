@@ -352,11 +352,33 @@ export const itemRoutes: FastifyPluginAsync = async (app) => {
       prisma.item.count({ where: { householdId, status: { notIn: ['CONSUMED', 'DISCARDED'] }, pendienteDonacion: true } }),
       prisma.pantryZone.findMany({
         where: { householdId },
-        include: { _count: { select: { items: { where: { status: { notIn: ['CONSUMED', 'DISCARDED'] } } } } } },
+        include: {
+          items: {
+            where: { status: { notIn: ['CONSUMED', 'DISCARDED'] } },
+            orderBy: { expiryDate: 'asc' },
+          },
+        },
         orderBy: { position: 'asc' },
       }),
     ])
 
-    return reply.send({ data: { total, expiringSoon, expired, pendienteDonacion, zones: zones.map(z => ({ ...z, itemCount: z._count.items })) } })
+    return reply.send({
+      data: {
+        total, expiringSoon, expired, pendienteDonacion,
+        zones: zones.map(z => ({
+          id: z.id,
+          name: z.name,
+          icon: z.icon,
+          itemCount: z.items.length,
+          items: z.items.map(i => ({
+            ...i,
+            quantity: Number(i.quantity),
+            price: i.price ? Number(i.price) : undefined,
+            daysUntilExpiry: daysUntilExpiry(i.expiryDate),
+            zone: { id: z.id, name: z.name, icon: z.icon },
+          })),
+        })),
+      },
+    })
   })
 }
