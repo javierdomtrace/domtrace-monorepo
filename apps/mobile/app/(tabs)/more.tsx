@@ -10,6 +10,7 @@ const ITEMS = [
   { href: '/more/cosmetics', icon: '🧴', label: 'Cosméticos y belleza', desc: 'Control de PAO de cremas y maquillaje' },
   { href: '/more/medications', icon: '💉', label: 'Medicamentos', desc: 'Botiquín, tomas y reciclaje SIGRE' },
   { href: '/more/baby', icon: '👶', label: 'Bebés', desc: 'Tomas, pañales y artículos del bebé' },
+  { href: '/more/wine', icon: '🍷', label: 'Vinos y bodega', desc: 'Ficha de vinos, valoraciones y notas de cata' },
   { href: '/more/calendar', icon: '📅', label: 'Calendario', desc: 'Eventos y recordatorios del hogar' },
   { href: '/more/accessibility', icon: '♿', label: 'Accesibilidad', desc: 'Voz, vibración y tamaño de texto' },
 ] as const

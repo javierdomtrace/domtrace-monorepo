@@ -25,6 +25,13 @@ const CreateItemBody = z.object({
   price: z.number().nonnegative().optional(),
   allergens: z.array(z.string()).default([]),
   notes: z.string().optional(),
+  // Bodega y vinos
+  bodega: z.string().optional(),
+  anada: z.number().int().optional(),
+  varietal: z.string().optional(),
+  denominacion: z.string().optional(),
+  valoracion: z.number().min(0).max(5).optional(),
+  notasCata: z.string().optional(),
 })
 
 const ItemFilters = z.object({
@@ -131,6 +138,12 @@ export const itemRoutes: FastifyPluginAsync = async (app) => {
         price: body.price,
         allergens: body.allergens,
         notes: body.notes,
+        bodega: body.bodega,
+        anada: body.anada,
+        varietal: body.varietal,
+        denominacion: body.denominacion,
+        valoracion: body.valoracion,
+        notasCata: body.notasCata,
       },
       include: { zone: { select: { id: true, name: true, icon: true } } },
     })

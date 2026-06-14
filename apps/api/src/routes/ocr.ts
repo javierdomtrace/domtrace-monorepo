@@ -80,4 +80,78 @@ Reglas:
       return reply.status(500).send({ error: 'No se pudo procesar la imagen', code: 'OCR_ERROR' })
     }
   })
+
+  // POST /v1/ocr/wine-label — reconoce bodega, varietal, añada y D.O. de una etiqueta de vino
+  app.post('/ocr/wine-label', {
+    preHandler: [app.authenticate],
+    bodyLimit: 12 * 1024 * 1024,
+  }, async (req, reply) => {
+    const parsed = LabelScanBody.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Datos de imagen inválidos', code: 'BAD_REQUEST' })
+    }
+    const { image, mediaType } = parsed.data
+
+    if (!ALLOWED_MEDIA_TYPES.has(mediaType)) {
+      return reply.status(400).send({ error: 'Tipo de imagen no soportado', code: 'BAD_REQUEST' })
+    }
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return reply.status(503).send({ error: 'OCR no configurado (falta ANTHROPIC_API_KEY)', code: 'NOT_CONFIGURED' })
+    }
+
+    const prompt = `Esta es una foto de la etiqueta de una botella de vino. Identifica los datos del vino a partir del texto visible en la etiqueta.
+
+Responde ÚNICAMENTE con JSON, sin texto adicional ni markdown, con este formato exacto:
+{
+  "name": "nombre del vino tal como aparece en la etiqueta" | null,
+  "bodega": "nombre de la bodega/productor" | null,
+  "varietal": "variedad(es) de uva, ej: Tempranillo, Garnacha" | null,
+  "anada": 2021 | null,
+  "denominacion": "denominación de origen, ej: Rioja, Ribera del Duero" | null,
+  "confidence": "alta" | "media" | "baja",
+  "notes": "aclaración breve si hay ambigüedad, o null"
+}
+
+Reglas:
+- "anada" es el año de cosecha (vintage), un número entero de 4 cifras. Si no aparece, null.
+- Si varias variedades aparecen, sepáralas por coma en un único string.
+- Si no encuentras un dato con claridad, pon null en ese campo en vez de inventar.
+- "confidence" refleja tu seguridad global de la lectura.`
+
+    try {
+      const response = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType as any, data: image } },
+            { type: 'text', text: prompt },
+          ],
+        }],
+      })
+
+      const block = response.content.find(b => b.type === 'text')
+      const raw = block?.type === 'text' ? block.text.trim() : '{}'
+      const jsonMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/) ?? raw.match(/(\{[\s\S]*\})/)
+      const jsonStr = jsonMatch ? (jsonMatch[1] ?? jsonMatch[0]) : raw
+      const result = JSON.parse(jsonStr)
+
+      return reply.send({
+        data: {
+          name: result.name ?? null,
+          bodega: result.bodega ?? null,
+          varietal: result.varietal ?? null,
+          anada: typeof result.anada === 'number' ? result.anada : null,
+          denominacion: result.denominacion ?? null,
+          confidence: result.confidence ?? 'baja',
+          notes: result.notes ?? null,
+        },
+      })
+    } catch (e: any) {
+      app.log.error({ err: e.message }, 'ocr/wine-label error')
+      return reply.status(500).send({ error: 'No se pudo procesar la imagen', code: 'OCR_ERROR' })
+    }
+  })
 }

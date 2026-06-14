@@ -278,6 +278,14 @@ model Item {
   // Bebés: si el item pertenece a un bebé concreto
   babyId      String?
 
+  // Bodega y vinos (categoryId = 'wine')
+  bodega      String?   // Bodega / productor
+  anada       Int?      // Añada (año de cosecha)
+  varietal    String?   // Variedad de uva (ej: Tempranillo, Garnacha)
+  denominacion String?  // Denominación de origen (DO/DOCa)
+  valoracion  Float?    // Valoración personal (0-5)
+  notasCata   String?   // Notas de cata
+
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
