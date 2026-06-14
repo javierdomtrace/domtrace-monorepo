@@ -345,7 +345,7 @@ export const itemRoutes: FastifyPluginAsync = async (app) => {
     const now = new Date()
     const in7days = new Date(Date.now() + 7 * 86400000)
 
-    const [total, expiringSoon, expired, pendienteDonacion, zones] = await Promise.all([
+    const [total, expiringSoon, expired, pendienteDonacion, zones, unassigned] = await Promise.all([
       prisma.item.count({ where: { householdId, status: { notIn: ['CONSUMED', 'DISCARDED'] } } }),
       prisma.item.count({ where: { householdId, status: { notIn: ['CONSUMED', 'DISCARDED'] }, expiryDate: { lte: in7days, gte: now }, pendienteDonacion: false } }),
       prisma.item.count({ where: { householdId, status: { notIn: ['CONSUMED', 'DISCARDED'] }, expiryDate: { lt: now }, pendienteDonacion: false } }),
@@ -360,25 +360,46 @@ export const itemRoutes: FastifyPluginAsync = async (app) => {
         },
         orderBy: { position: 'asc' },
       }),
+      // Items sin zona asignada (p.ej. añadidos por escaneo sin elegir ubicación):
+      // sin esto, quedaban invisibles en el listado aunque sí contaban en `total`.
+      prisma.item.findMany({
+        where: { householdId, zoneId: null, status: { notIn: ['CONSUMED', 'DISCARDED'] } },
+        orderBy: { expiryDate: 'asc' },
+      }),
     ])
 
-    return reply.send({
-      data: {
-        total, expiringSoon, expired, pendienteDonacion,
-        zones: zones.map(z => ({
-          id: z.id,
-          name: z.name,
-          icon: z.icon,
-          itemCount: z.items.length,
-          items: z.items.map(i => ({
-            ...i,
-            quantity: Number(i.quantity),
-            price: i.price ? Number(i.price) : undefined,
-            daysUntilExpiry: daysUntilExpiry(i.expiryDate),
-            zone: { id: z.id, name: z.name, icon: z.icon },
-          })),
+    const zonesData = zones.map(z => ({
+      id: z.id,
+      name: z.name,
+      icon: z.icon,
+      itemCount: z.items.length,
+      items: z.items.map(i => ({
+        ...i,
+        quantity: Number(i.quantity),
+        price: i.price ? Number(i.price) : undefined,
+        daysUntilExpiry: daysUntilExpiry(i.expiryDate),
+        zone: { id: z.id, name: z.name, icon: z.icon },
+      })),
+    }))
+
+    if (unassigned.length > 0) {
+      zonesData.push({
+        id: 'unassigned',
+        name: 'Sin ubicación',
+        icon: '📦',
+        itemCount: unassigned.length,
+        items: unassigned.map(i => ({
+          ...i,
+          quantity: Number(i.quantity),
+          price: i.price ? Number(i.price) : undefined,
+          daysUntilExpiry: daysUntilExpiry(i.expiryDate),
+          zone: { id: 'unassigned', name: 'Sin ubicación', icon: '📦' },
         })),
-      },
+      })
+    }
+
+    return reply.send({
+      data: { total, expiringSoon, expired, pendienteDonacion, zones: zonesData },
     })
   })
 }

@@ -19,6 +19,8 @@
     /* accesibilidad */
     --focus-ring: 3px solid #4ECDC4;
     --focus-offset: 3px;
+    /* borde reforzado para iconos/controles interactivos: >=3:1 sobre --bg y --surface (WCAG 1.4.11) */
+    --border-strong: #6E7A8A;
   }
 
   /* ── Alto contraste ─────────────────────────────────────── */
@@ -35,6 +37,7 @@
     --warning: #FFEE00;
     --ok: #00FF88;
     --focus-ring: 3px solid #FFFF00;
+    --border-strong: #AAAACC;
   }
 
   /* ── Tamaños de fuente ──────────────────────────────────── */

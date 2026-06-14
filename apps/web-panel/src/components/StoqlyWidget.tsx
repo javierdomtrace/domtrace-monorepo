@@ -391,7 +391,8 @@ export function StoqlyWidget() {
       {open && (
         <div id="stoqly-chat-panel" role="dialog" aria-label={`Chat con ${user?.assistantName ?? 'Stoqly'}`} style={{
           position: 'fixed', bottom: 96, right: 28, zIndex: 999,
-          width: 380, height: 520,
+          width: 'min(380px, calc(100vw - 56px))',
+          height: 'min(520px, calc(100vh - 160px))',
           background: '#1A1A2E', border: '1px solid #2A2A3E',
           borderRadius: 16, display: 'flex', flexDirection: 'column',
           boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
@@ -425,7 +426,7 @@ export function StoqlyWidget() {
               style={{
                 width: 30, height: 30, borderRadius: '50%',
                 background: wakeActive ? 'rgba(78,205,196,0.2)' : '#2A2A3E',
-                border: `1px solid ${wakeActive ? '#4ECDC4' : '#3A3A4E'}`,
+                border: `1px solid ${wakeActive ? '#4ECDC4' : '#6E7A8A'}`,
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 14, flexShrink: 0,

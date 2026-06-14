@@ -28,7 +28,7 @@ export function AccessibilityPanel() {
           position: 'fixed', bottom: 90, right: 20, zIndex: 9000,
           width: 44, height: 44, borderRadius: '50%',
           background: highContrast ? '#00FFEE' : 'var(--surface2)',
-          border: '2px solid var(--border)',
+          border: '2px solid var(--border-strong)',
           color: highContrast ? '#000' : 'var(--muted)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,.4)',
@@ -47,7 +47,9 @@ export function AccessibilityPanel() {
           aria-modal="false"
           style={{
             position: 'fixed', bottom: 144, right: 20, zIndex: 9000,
-            width: 320, background: 'var(--surface)',
+            width: 'min(320px, calc(100vw - 40px))',
+            maxHeight: 'calc(100vh - 160px)', overflowY: 'auto',
+            background: 'var(--surface)',
             border: '1px solid var(--border)', borderRadius: 14,
             boxShadow: '0 8px 32px rgba(0,0,0,.5)',
             padding: 20, fontFamily: 'Inter, system-ui, sans-serif',
@@ -87,7 +89,7 @@ export function AccessibilityPanel() {
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                       padding: '10px 8px', borderRadius: 10, cursor: 'pointer',
                       background: active ? 'rgba(78,205,196,0.15)' : 'var(--bg)',
-                      border: active ? '1.5px solid var(--teal)' : '1.5px solid var(--border)',
+                      border: active ? '1.5px solid var(--teal)' : '1.5px solid var(--border-strong)',
                       color: active ? 'var(--teal)' : 'var(--muted)',
                       fontSize: 11, fontWeight: 600, transition: 'all 0.15s',
                     }}
@@ -123,8 +125,13 @@ export function AccessibilityPanel() {
                     key={s}
                     onClick={() => setFontSize(s)}
                     aria-pressed={fontSize === s}
+                    aria-label={
+                      s === 'normal' ? 'Tamaño de texto normal (A)'
+                        : s === 'large' ? 'Tamaño de texto grande (A)'
+                          : 'Tamaño de texto muy grande (A)'
+                    }
                     style={{
-                      padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)',
+                      padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border-strong)',
                       background: fontSize === s ? 'var(--teal)' : 'var(--bg)',
                       color: fontSize === s ? '#000' : 'var(--muted)',
                       fontSize: s === 'normal' ? 11 : s === 'large' ? 13 : 15,

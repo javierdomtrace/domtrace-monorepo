@@ -25,10 +25,17 @@ export default function ScanScreen() {
       api.post('/items', body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pantry-summary'] })
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
       Alert.alert('✓ Añadido', 'Producto añadido a la despensa', [
         { text: 'Seguir escaneando', onPress: () => setScanned(false) },
         { text: 'Ir a despensa', onPress: () => router.replace('/(tabs)') },
+      ])
+    },
+    onError: (err: unknown) => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
+      const message = err instanceof Error ? err.message : 'No se pudo añadir el producto'
+      Alert.alert('Error al añadir', message, [
+        { text: 'Reintentar', onPress: () => setScanned(false) },
       ])
     },
   })
@@ -65,7 +72,10 @@ export default function ScanScreen() {
   const handleBarcode = ({ data }: { data: string }) => {
     if (scanned || lookingUp) return
     setScanned(true)
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    // Feedback inmediato de que se ha detectado el código (vibración).
+    // .catch para que un fallo del haptic (p.ej. dispositivo sin motor de vibración)
+    // no bloquee el flujo de añadir el producto.
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {})
     lookupAndAdd(data)
   }
 

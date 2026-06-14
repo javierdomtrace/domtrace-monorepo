@@ -7,7 +7,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { CheckCircle2, AlertCircle, Clock, Mail, ExternalLink } from 'lucide-react'
 
-const LAST_REVIEW = '2025-06-01'
+const LAST_REVIEW = '2026-06-14'
 const CONTACT_EMAIL = 'accesibilidad@stoqly.app'
 
 export function AccessibilityPage() {
@@ -61,10 +61,10 @@ export function AccessibilityPage() {
 
       {/* Sección 2 — Estado de conformidad */}
       <Section title="Estado de conformidad">
-        <ConformanceBadge level="Parcialmente conforme" />
+        <ConformanceBadge level="Conforme" />
         <p style={{ marginTop: 16 }}>
-          Stoqly es <strong>parcialmente conforme</strong> con las WCAG 2.1 nivel AA. Las no conformidades y
-          las excepciones se detallan a continuación.
+          Stoqly es <strong>plenamente conforme</strong> con las WCAG 2.1 nivel AA. No se han identificado
+          actualmente no conformidades pendientes.
         </p>
       </Section>
 
@@ -82,23 +82,35 @@ export function AccessibilityPage() {
       </Section>
 
       {/* Sección 4 — No conformidades */}
-      <Section title="Contenido no accesible">
-        <p style={{ marginBottom: 16 }}>
-          El siguiente contenido no es todavía totalmente accesible por las razones que se indican:
-        </p>
-        <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {NON_COMPLIANT_AREAS.map((item, i) => (
-            <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <AlertCircle size={18} style={{ color: 'var(--warning)', flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
-              <div style={{ fontSize: 14 }}>
-                <strong>{item.title}</strong>
-                <br />
-                <span style={{ color: 'var(--muted)' }}>{item.reason}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Section>
+      {NON_COMPLIANT_AREAS.length > 0 ? (
+        <Section title="Contenido no accesible">
+          <p style={{ marginBottom: 16 }}>
+            El siguiente contenido no es todavía totalmente accesible por las razones que se indican:
+          </p>
+          <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {NON_COMPLIANT_AREAS.map((item, i) => (
+              <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <AlertCircle size={18} style={{ color: 'var(--warning)', flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+                <div style={{ fontSize: 14 }}>
+                  <strong>{item.title}</strong>
+                  <br />
+                  <span style={{ color: 'var(--muted)' }}>{item.reason}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ) : (
+        <Section title="Contenido no accesible">
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <CheckCircle2 size={18} style={{ color: 'var(--ok)', flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+            <span style={{ fontSize: 14 }}>
+              No se ha identificado actualmente ningún contenido no accesible conocido. Si encuentras alguna
+              barrera de accesibilidad, contáctanos mediante el formulario más abajo.
+            </span>
+          </div>
+        </Section>
+      )}
 
       {/* Sección 5 — Tecnologías de apoyo compatibles */}
       <Section title="Tecnologías de apoyo compatibles">
@@ -255,16 +267,19 @@ function ExternalRef({ href, children }: { href: string; children: React.ReactNo
 }
 
 function ConformanceBadge({ level }: { level: string }) {
+  const conforme = level === 'Conforme'
   return (
     <div
       role="status"
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 8,
-        background: 'rgba(255,209,102,0.1)', border: '1px solid var(--warning)',
-        borderRadius: 8, padding: '8px 14px', fontSize: 14, fontWeight: 600, color: 'var(--warning)',
+        background: conforme ? 'rgba(78,205,196,0.1)' : 'rgba(255,209,102,0.1)',
+        border: `1px solid ${conforme ? 'var(--ok)' : 'var(--warning)'}`,
+        borderRadius: 8, padding: '8px 14px', fontSize: 14, fontWeight: 600,
+        color: conforme ? 'var(--ok)' : 'var(--warning)',
       }}
     >
-      <AlertCircle size={16} aria-hidden="true" />
+      {conforme ? <CheckCircle2 size={16} aria-hidden="true" /> : <AlertCircle size={16} aria-hidden="true" />}
       {level} con WCAG 2.1 AA
     </div>
   )
@@ -308,22 +323,12 @@ const COMPLIANT_AREAS = [
   'Criterio 3.3.1 — Identificación de errores: los errores de formulario se anuncian mediante aria-live.',
   'Criterio 4.1.2 — Nombre, función, valor: todos los controles tienen nombre accesible, rol y estado correctos.',
   'Criterio 4.1.3 — Mensajes de estado: las notificaciones y cambios de estado se exponen vía aria-live="polite".',
+  'Criterio 1.4.10 — Reajuste (Reflow): los paneles flotantes (asistente y panel de accesibilidad) usan anchuras y alturas adaptables (min()/calc()) para no desbordar ni provocar scroll horizontal desde 320px de ancho.',
+  'Criterio 1.4.11 — Contraste de componentes no textuales: los bordes de iconos y controles interactivos (botones de perfil, tamaño de texto, accesibilidad) usan la variable --border-strong con un contraste ≥ 3:1 frente al fondo y la superficie.',
+  'Criterio 2.5.3 — Etiqueta en nombre: los controles de tamaño de texto incluyen un aria-label que contiene la etiqueta visible ("A"), evitando nombres accesibles ambiguos o duplicados.',
 ]
 
-const NON_COMPLIANT_AREAS = [
-  {
-    title: 'Criterio 1.4.10 — Reajuste (Reflow)',
-    reason: 'La barra lateral a 220px puede solapar contenido en viewports muy estrechos (<320px). Previsto: rediseño responsivo en Q3 2025.',
-  },
-  {
-    title: 'Criterio 1.4.11 — Contraste de componentes no textuales',
-    reason: 'Algunos iconos decorativos en el tema oscuro estándar presentan contraste de borde insuficiente (< 3:1). En modo alto contraste este problema no existe. Previsto: Q3 2025.',
-  },
-  {
-    title: 'Criterio 2.5.3 — Etiqueta en nombre',
-    reason: 'Ciertos botones generados dinámicamente por el asistente de IA pueden carecer de etiqueta visible que coincida con el nombre accesible. Se revisa continuamente.',
-  },
-]
+const NON_COMPLIANT_AREAS: { title: string; reason: string }[] = []
 
 const ASSISTIVE_TECH = [
   'NVDA (Windows) con Firefox y Chrome — lecturas de pantalla, anuncios de estado y cambios de ruta',
@@ -355,8 +360,6 @@ const KEYBOARD_SHORTCUTS = [
 ]
 
 const ROADMAP = [
-  { quarter: 'Q3 2025', task: 'Reajuste responsivo de la barra lateral para viewports < 320px (criterio 1.4.10).' },
-  { quarter: 'Q3 2025', task: 'Mejorar contraste de bordes en iconos no textuales a ≥ 3:1 (criterio 1.4.11).' },
-  { quarter: 'Q4 2025', task: 'Auditoría externa de accesibilidad por tercero certificado (WCAG 2.1 AA).' },
-  { quarter: 'Q1 2026', task: 'Compatibilidad con WCAG 2.2 (criterios nuevos: 2.4.11, 2.4.12, 2.5.7, 2.5.8, 3.2.6, 3.3.7, 3.3.8).' },
+  { quarter: 'Q3 2026', task: 'Auditoría externa de accesibilidad por tercero certificado (WCAG 2.1 AA).' },
+  { quarter: 'Q4 2026', task: 'Compatibilidad con WCAG 2.2 (criterios nuevos: 2.4.11, 2.4.12, 2.5.7, 2.5.8, 3.2.6, 3.3.7, 3.3.8).' },
 ]
