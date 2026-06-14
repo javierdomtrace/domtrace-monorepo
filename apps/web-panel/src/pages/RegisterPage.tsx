@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
-import { api, setToken } from '../lib/api'
+import { api, setToken, setRefreshToken } from '../lib/api'
 import { useAuth } from '../store/auth'
 
 type Step = 'account' | 'name' | 'household' | 'supermarket' | 'location' | 'done'
@@ -37,6 +37,7 @@ export function RegisterPage() {
     try {
       const res = await api.post<any>('/auth/register', { email, password, name: name || email.split('@')[0] })
       setToken(res.tokens.accessToken)
+      setRefreshToken(res.tokens.refreshToken ?? null)
       setUserId(res.user.id)
       next('name')
     } catch (e: any) {

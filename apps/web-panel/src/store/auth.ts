@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { api, setToken } from '../lib/api'
+import { api, setToken, setRefreshToken } from '../lib/api'
 
 export type Tier = 'FREE' | 'HOGAR' | 'EXPERTO' | 'ENTERPRISE'
 
@@ -27,14 +27,16 @@ export const useAuth = create<AuthStore>()(
       user: null,
       accessToken: null,
       login: async (email, password) => {
-        const data = await api.post<{ user: User; tokens: { accessToken: string } }>(
+        const data = await api.post<{ user: User; tokens: { accessToken: string; refreshToken?: string } }>(
           '/auth/login', { email, password }
         )
         setToken(data.tokens.accessToken)
+        setRefreshToken(data.tokens.refreshToken ?? null)
         set({ user: data.user, accessToken: data.tokens.accessToken })
       },
       logout: () => {
         setToken(null)
+        setRefreshToken(null)
         set({ user: null, accessToken: null })
       },
       updateUser: (patch) => set(s => ({ user: s.user ? { ...s.user, ...patch } : null })),
