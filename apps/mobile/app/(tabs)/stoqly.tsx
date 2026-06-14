@@ -127,7 +127,12 @@ export default function StoqlyScreen() {
         </View>
         <TouchableOpacity
           onPress={speakLast}
-          style={[styles.speakBtn, { backgroundColor: speaking ? 'rgba(29,158,117,0.2)' : theme.border }]}
+          accessibilityRole="button"
+          accessibilityLabel={speaking ? 'Detener lectura en voz alta' : 'Leer en voz alta la última respuesta'}
+          style={[
+            styles.speakBtn,
+            { backgroundColor: speaking ? 'rgba(29,158,117,0.2)' : theme.border, borderWidth: 1, borderColor: theme.borderStrong },
+          ]}
         >
           <Text style={{ fontSize: 18 }}>{speaking ? '🔊' : '🔈'}</Text>
         </TouchableOpacity>
@@ -213,7 +218,10 @@ export default function StoqlyScreen() {
         <TouchableOpacity
           onPress={() => send()}
           disabled={!input.trim() || loading}
-          style={[styles.sendBtn, { opacity: !input.trim() || loading ? 0.4 : 1 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Enviar mensaje"
+          accessibilityState={{ disabled: !input.trim() || loading }}
+          style={[styles.sendBtn, { opacity: !input.trim() || loading ? 0.4 : 1, borderWidth: 1, borderColor: theme.borderStrong }]}
         >
           {loading
             ? <ActivityIndicator color="#fff" size="small" />

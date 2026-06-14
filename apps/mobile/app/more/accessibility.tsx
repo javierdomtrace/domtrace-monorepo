@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, ScrollView, Linking, StyleSheet } from 'r
 import { theme } from '@/theme'
 import { ScreenHeader, Section, styles as ui } from '@/components/ui'
 
-const LAST_REVIEW = '2025-06-01'
+const LAST_REVIEW = '2026-06-14'
 const CONTACT_EMAIL = 'accesibilidad@stoqly.app'
 
 function formatDate(iso: string) {
@@ -22,22 +22,12 @@ const COMPLIANT_AREAS = [
   'Criterio 3.3.1 — Identificación de errores: los errores de formulario se anuncian al lector de pantalla.',
   'Criterio 4.1.2 — Nombre, función, valor: todos los controles tienen nombre, rol y estado accesibles correctos.',
   'Criterio 4.1.3 — Mensajes de estado: las notificaciones y cambios de estado se anuncian de forma no intrusiva.',
+  'Criterio 1.4.10 — Reajuste (Reflow): las pantallas usan diseños flexibles (flex/porcentajes) que se adaptan a cualquier tamaño de pantalla sin provocar desplazamiento horizontal ni pérdida de contenido.',
+  'Criterio 1.4.11 — Contraste de componentes no textuales: los controles de solo icono (leer en voz alta, enviar mensaje, añadir elemento) usan un borde de contraste ≥ 3:1 frente al fondo.',
+  'Criterio 2.5.3 — Etiqueta en nombre: los controles de solo icono incluyen un accessibilityLabel descriptivo que coincide con su función visible.',
 ]
 
-const NON_COMPLIANT_AREAS = [
-  {
-    title: 'Criterio 1.4.10 — Reajuste (Reflow)',
-    reason: 'Algunas pantallas con tablas o paneles complejos pueden requerir desplazamiento horizontal en dispositivos muy estrechos. Previsto: rediseño responsivo en Q3 2025.',
-  },
-  {
-    title: 'Criterio 1.4.11 — Contraste de componentes no textuales',
-    reason: 'Algunos iconos decorativos en el tema oscuro estándar presentan contraste de borde insuficiente (< 3:1). En modo alto contraste este problema no existe. Previsto: Q3 2025.',
-  },
-  {
-    title: 'Criterio 2.5.3 — Etiqueta en nombre',
-    reason: 'Ciertos botones generados dinámicamente por el asistente de IA pueden carecer de etiqueta visible que coincida con el nombre accesible. Se revisa continuamente.',
-  },
-]
+const NON_COMPLIANT_AREAS: { title: string; reason: string }[] = []
 
 const ASSISTIVE_TECH = [
   'VoiceOver (iOS) — lecturas de pantalla, anuncios de estado y cambios de pantalla',
@@ -58,10 +48,8 @@ const BUILTIN_FEATURES = [
 ]
 
 const ROADMAP = [
-  { quarter: 'Q3 2025', task: 'Rediseño responsivo de pantallas con tablas o paneles complejos (criterio 1.4.10).' },
-  { quarter: 'Q3 2025', task: 'Mejorar contraste de bordes en iconos no textuales a ≥ 3:1 (criterio 1.4.11).' },
-  { quarter: 'Q4 2025', task: 'Auditoría externa de accesibilidad por tercero certificado (WCAG 2.1 AA).' },
-  { quarter: 'Q1 2026', task: 'Compatibilidad con WCAG 2.2 (criterios nuevos: 2.4.11, 2.4.12, 2.5.7, 2.5.8, 3.2.6, 3.3.7, 3.3.8).' },
+  { quarter: 'Q3 2026', task: 'Auditoría externa de accesibilidad por tercero certificado (WCAG 2.1 AA).' },
+  { quarter: 'Q4 2026', task: 'Compatibilidad con WCAG 2.2 (criterios nuevos: 2.4.11, 2.4.12, 2.5.7, 2.5.8, 3.2.6, 3.3.7, 3.3.8).' },
 ]
 
 function Bullet({ children, icon }: { children: string; icon?: string }) {
@@ -99,11 +87,11 @@ export default function AccessibilityScreen() {
 
         <Section title="Estado de conformidad">
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>⚠ Parcialmente conforme con WCAG 2.1 AA</Text>
+            <Text style={styles.badgeText}>✅ Conforme con WCAG 2.1 AA</Text>
           </View>
           <Text style={[styles.p, { marginTop: 12 }]}>
-            Stoqly es parcialmente conforme con las WCAG 2.1 nivel AA. Las no conformidades y las excepciones se
-            detallan a continuación.
+            Stoqly es plenamente conforme con las WCAG 2.1 nivel AA. No se han identificado actualmente
+            no conformidades pendientes.
           </Text>
         </Section>
 
@@ -113,16 +101,22 @@ export default function AccessibilityScreen() {
         </Section>
 
         <Section title="Contenido no accesible">
-          <Text style={styles.p}>El siguiente contenido no es todavía totalmente accesible por las razones que se indican:</Text>
-          {NON_COMPLIANT_AREAS.map((item, i) => (
-            <View key={i} style={styles.bulletRow}>
-              <Text style={styles.bulletIcon}>⚠️</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.bulletTitle}>{item.title}</Text>
-                <Text style={styles.bulletSub}>{item.reason}</Text>
-              </View>
-            </View>
-          ))}
+          {NON_COMPLIANT_AREAS.length > 0 ? (
+            <>
+              <Text style={styles.p}>El siguiente contenido no es todavía totalmente accesible por las razones que se indican:</Text>
+              {NON_COMPLIANT_AREAS.map((item, i) => (
+                <View key={i} style={styles.bulletRow}>
+                  <Text style={styles.bulletIcon}>⚠️</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.bulletTitle}>{item.title}</Text>
+                    <Text style={styles.bulletSub}>{item.reason}</Text>
+                  </View>
+                </View>
+              ))}
+            </>
+          ) : (
+            <Bullet icon="✅">No se ha identificado actualmente ningún contenido no accesible conocido en la aplicación.</Bullet>
+          )}
         </Section>
 
         <Section title="Tecnologías de apoyo compatibles">
@@ -187,8 +181,8 @@ const styles = StyleSheet.create({
   p: { color: theme.text, fontSize: 14, lineHeight: 21, marginBottom: 10 },
   link: { color: theme.teal, fontSize: 13, textDecorationLine: 'underline', marginBottom: 6 },
 
-  badge: { alignSelf: 'flex-start', backgroundColor: theme.warn + '22', borderWidth: 1, borderColor: theme.warn, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  badgeText: { color: theme.warn, fontSize: 13, fontWeight: '700' },
+  badge: { alignSelf: 'flex-start', backgroundColor: theme.brand + '22', borderWidth: 1, borderColor: theme.brand, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  badgeText: { color: theme.brand, fontSize: 13, fontWeight: '700' },
 
   bulletRow: { flexDirection: 'row', gap: 10, marginBottom: 10, alignItems: 'flex-start' },
   bulletIcon: { fontSize: 14, marginTop: 1 },

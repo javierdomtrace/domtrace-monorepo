@@ -4,6 +4,9 @@ export const theme = {
   bg:      '#0F1923',
   surface: '#1A2633',
   border:  '#263545',
+  // Borde de mayor contraste (>= 3:1) para iconos y controles no textuales,
+  // equivalente a --border-strong del panel web (criterio WCAG 1.4.11).
+  borderStrong: '#6E7A8A',
   text:    '#EEF3F6',
   muted:   '#7A9BB5',
   danger:  '#E24B4A',
@@ -18,6 +21,7 @@ export const themeHC = {
   bg:      '#000000',
   surface: '#0A0A0A',
   border:  '#FFFFFF',
+  borderStrong: '#FFFFFF',
   text:    '#FFFFFF',
   muted:   '#CCCCCC',
   danger:  '#FF5C5C',
@@ -30,6 +34,7 @@ export type Theme = {
   bg: string
   surface: string
   border: string
+  borderStrong: string
   text: string
   muted: string
   danger: string

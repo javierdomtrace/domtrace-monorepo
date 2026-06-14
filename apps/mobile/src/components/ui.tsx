@@ -111,7 +111,7 @@ export function ToggleRow({ label, value, onValueChange, disabled }: {
 export function CollapsedAdd({ label, onPress }: { label: string; onPress: () => void }) {
   const { theme: t, scale } = useA11yTheme()
   return (
-    <TouchableOpacity onPress={onPress} style={[styles.collapsedAdd, { borderColor: t.border }]}>
+    <TouchableOpacity onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.collapsedAdd, { borderColor: t.borderStrong }]}>
       <Text style={[styles.collapsedAddText, { color: t.brand, fontSize: scale(13) }]}>＋ {label}</Text>
     </TouchableOpacity>
   )
