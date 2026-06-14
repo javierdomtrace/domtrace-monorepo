@@ -98,7 +98,9 @@ export default function ScanScreen() {
     return (
       <ManualEntry
         ean={manualEan}
+        looking={lookingUp}
         onAdd={(name) => { setShowManual(false); add.mutate({ name, quantity: 1, unit: 'u' }) }}
+        onLookup={(code) => { setShowManual(false); lookupAndAdd(code) }}
         onCancel={() => { setShowManual(false); setScanned(false) }}
       />
     )
@@ -161,17 +163,49 @@ export default function ScanScreen() {
   )
 }
 
-function ManualEntry({ ean, onAdd, onCancel }: { ean: string; onAdd: (name: string) => void; onCancel: () => void }) {
+function ManualEntry({ ean, onAdd, onCancel, onLookup, looking }: {
+  ean: string
+  onAdd: (name: string) => void
+  onCancel: () => void
+  onLookup: (ean: string) => void
+  looking: boolean
+}) {
   const [name, setName] = useState('')
+  const [code, setCode] = useState('')
+
   return (
     <View style={styles.manualScreen}>
       <Text style={styles.manualTitle}>Añadir producto</Text>
       {ean ? <Text style={styles.manualEan}>EAN: {ean} — no encontrado en base de datos</Text> : null}
+
+      {!ean && (
+        <>
+          <Text style={styles.manualLabel}>Código de barras (EAN)</Text>
+          <TextInput
+            style={styles.manualInput}
+            placeholder="Ej: 8410000012345" placeholderTextColor={theme.muted}
+            keyboardType="number-pad"
+            value={code} onChangeText={setCode}
+            returnKeyType="search" onSubmitEditing={() => code && onLookup(code)}
+          />
+          <TouchableOpacity
+            onPress={() => code && onLookup(code)}
+            disabled={!code || looking}
+            style={[styles.confirmBtn, { marginBottom: 24, opacity: code && !looking ? 1 : 0.4 }]}
+          >
+            {looking
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={styles.confirmBtnText}>Buscar producto</Text>}
+          </TouchableOpacity>
+          <Text style={[styles.manualLabel, { marginTop: 8 }]}>O añade manualmente sin código</Text>
+        </>
+      )}
+
       <Text style={styles.manualLabel}>Nombre del producto</Text>
       <TextInput
         style={styles.manualInput}
         placeholder="Ej: Vino Rioja 2021" placeholderTextColor={theme.muted}
-        autoFocus value={name} onChangeText={setName}
+        autoFocus={!!ean} value={name} onChangeText={setName}
         returnKeyType="done" onSubmitEditing={() => name && onAdd(name)}
       />
       <View style={styles.manualButtons}>

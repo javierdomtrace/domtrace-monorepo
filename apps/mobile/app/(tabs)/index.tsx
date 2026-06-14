@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
-  ActivityIndicator, TextInput, Alert, StyleSheet,
+  ActivityIndicator, TextInput, Alert, StyleSheet, Modal,
 } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
@@ -19,6 +19,14 @@ interface PantryItem {
 }
 interface Zone { id: string; name: string; icon: string; items: PantryItem[] }
 interface Summary { total: number; expiringSoon: number; expired: number; zones: Zone[] }
+interface ZoneOption { id: string; name: string; icon: string; temperatureType?: string; itemCount?: number }
+
+const TEMP_OPTIONS: { value: 'AMBIENT' | 'COLD' | 'FROZEN' | 'WARM'; label: string; icon: string }[] = [
+  { value: 'AMBIENT', label: 'Ambiente', icon: '🌡️' },
+  { value: 'COLD', label: 'Frío', icon: '🧊' },
+  { value: 'FROZEN', label: 'Congelador', icon: '❄️' },
+  { value: 'WARM', label: 'Cálido', icon: '🔥' },
+]
 
 function daysColor(days?: number) {
   if (days === undefined) return theme.muted
@@ -27,10 +35,11 @@ function daysColor(days?: number) {
   return theme.brand
 }
 
-function ItemCard({ item, onConsume, onDiscard }: {
+function ItemCard({ item, onConsume, onDiscard, onMove }: {
   item: PantryItem
   onConsume: () => void
   onDiscard: () => void
+  onMove: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const dc = daysColor(item.daysUntilExpiry)
@@ -64,6 +73,12 @@ function ItemCard({ item, onConsume, onDiscard }: {
             <Text style={styles.consumeText}>✓ Consumido</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onMove() }}
+            style={styles.moveBtn}
+          >
+            <Text style={styles.moveText}>📍 Mover</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onDiscard() }}
             style={styles.discardBtn}
           >
@@ -75,16 +90,127 @@ function ItemCard({ item, onConsume, onDiscard }: {
   )
 }
 
+function ZonePickerModal({ visible, item, zones, onSelect, onClose, onCreateNew }: {
+  visible: boolean
+  item: PantryItem | null
+  zones: ZoneOption[]
+  onSelect: (toZoneId: string | null) => void
+  onClose: () => void
+  onCreateNew: () => void
+}) {
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalSheet}>
+          <Text style={styles.modalTitle}>Mover{item ? ` "${item.name}"` : ''}</Text>
+          <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
+            <TouchableOpacity style={styles.zoneOption} onPress={() => onSelect(null)}>
+              <Text style={styles.zoneOptionIcon}>📦</Text>
+              <Text style={styles.zoneOptionName}>Sin ubicación</Text>
+              {!item?.zone && <Text style={styles.zoneOptionCurrent}>Actual</Text>}
+            </TouchableOpacity>
+            {zones.map(z => (
+              <TouchableOpacity key={z.id} style={styles.zoneOption} onPress={() => onSelect(z.id)}>
+                <Text style={styles.zoneOptionIcon}>{z.icon}</Text>
+                <Text style={styles.zoneOptionName}>{z.name}</Text>
+                {item?.zone?.id === z.id && <Text style={styles.zoneOptionCurrent}>Actual</Text>}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TouchableOpacity style={styles.newZoneBtn} onPress={onCreateNew}>
+            <Text style={styles.newZoneBtnText}>＋ Crear nueva zona</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalCancelBtn} onPress={onClose}>
+            <Text style={styles.cancelBtnText}>Cancelar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+function CreateZoneModal({ visible, onCreate, onClose, creating }: {
+  visible: boolean
+  onCreate: (data: { name: string; icon: string; temperatureType: string }) => void
+  onClose: () => void
+  creating: boolean
+}) {
+  const [name, setName] = useState('')
+  const [icon, setIcon] = useState('📦')
+  const [temp, setTemp] = useState<'AMBIENT' | 'COLD' | 'FROZEN' | 'WARM'>('AMBIENT')
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalSheet}>
+          <Text style={styles.modalTitle}>Nueva zona</Text>
+
+          <Text style={styles.manualLabel}>Nombre</Text>
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Ej: Despensa, Nevera, Garaje..."
+            placeholderTextColor={theme.muted}
+            value={name} onChangeText={setName}
+          />
+
+          <Text style={styles.manualLabel}>Icono</Text>
+          <TextInput
+            style={[styles.modalInput, { width: 72, textAlign: 'center', fontSize: 20 }]}
+            value={icon} onChangeText={setIcon} maxLength={2}
+          />
+
+          <Text style={styles.manualLabel}>Temperatura</Text>
+          <View style={styles.tempRow}>
+            {TEMP_OPTIONS.map(opt => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.tempPill, temp === opt.value && styles.tempPillActive]}
+                onPress={() => setTemp(opt.value)}
+              >
+                <Text style={[styles.tempPillText, temp === opt.value && styles.tempPillTextActive]}>
+                  {opt.icon} {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={[styles.manualButtons, { marginTop: 20 }]}>
+            <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
+              <Text style={styles.cancelBtnText}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => name.trim() && onCreate({ name: name.trim(), icon: icon.trim() || '📦', temperatureType: temp })}
+              disabled={!name.trim() || creating}
+              style={[styles.confirmBtn, { opacity: name.trim() && !creating ? 1 : 0.4 }]}
+            >
+              {creating
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.confirmBtnText}>Crear →</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
 export default function PantryScreen() {
   const qc = useQueryClient()
   const { user } = useAuth()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const [search, setSearch] = useState('')
+  const [movingItem, setMovingItem] = useState<PantryItem | null>(null)
+  const [showCreateZone, setShowCreateZone] = useState(false)
 
   const { data: summary, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['pantry-summary'],
     queryFn: () => api.get<Summary>('/pantry/summary'),
+  })
+
+  const { data: zoneOptions } = useQuery({
+    queryKey: ['pantry-zones'],
+    queryFn: () => api.get<ZoneOption[]>('/pantry/zones'),
   })
 
   const consume = useMutation({
@@ -97,12 +223,55 @@ export default function PantryScreen() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['pantry-summary'] }),
   })
 
+  const move = useMutation({
+    mutationFn: ({ id, toZoneId }: { id: string; toZoneId: string | null }) =>
+      api.patch(`/items/${id}/move`, { toZoneId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pantry-summary'] })
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
+      setMovingItem(null)
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : 'No se pudo mover el producto'
+      Alert.alert('Error', message)
+    },
+  })
+
+  const createZone = useMutation({
+    mutationFn: (body: { name: string; icon: string; temperatureType: string; position: number }) =>
+      api.post<ZoneOption>('/pantry/zones', body),
+    onSuccess: (zone) => {
+      qc.invalidateQueries({ queryKey: ['pantry-zones'] })
+      qc.invalidateQueries({ queryKey: ['pantry-summary'] })
+      setShowCreateZone(false)
+      // Si se creó la zona desde "Mover", asignar directamente el producto a la nueva zona.
+      if (movingItem) move.mutate({ id: movingItem.id, toZoneId: zone.id })
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : 'No se pudo crear la zona'
+      Alert.alert('Error', message)
+    },
+  })
+
   const allItems = summary?.zones?.flatMap(z => z.items) ?? []
   const filtered = search
     ? allItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
     : null
 
   const zones = summary?.zones ?? []
+  const realZones = (zoneOptions ?? []).filter(z => z.id !== 'unassigned')
+
+  const renderItem = (item: PantryItem) => (
+    <ItemCard
+      key={item.id} item={item}
+      onConsume={() => consume.mutate(item.id)}
+      onMove={() => setMovingItem(item)}
+      onDiscard={() => Alert.alert('Descartar', `¿Descartar ${item.name}?`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Descartar', style: 'destructive', onPress: () => discard.mutate(item.id) },
+      ])}
+    />
+  )
 
   return (
     <View style={styles.screen}>
@@ -173,53 +342,63 @@ export default function PantryScreen() {
               <Text style={[styles.itemSub, { marginBottom: 12 }]}>{filtered.length} resultados</Text>
               {filtered.length === 0
                 ? <Text style={[styles.itemSub, { textAlign: 'center', paddingVertical: 32 }]}>Sin resultados para "{search}"</Text>
-                : filtered.map(item => (
-                    <ItemCard
-                      key={item.id} item={item}
-                      onConsume={() => consume.mutate(item.id)}
-                      onDiscard={() => Alert.alert('Descartar', `¿Descartar ${item.name}?`, [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Descartar', style: 'destructive', onPress: () => discard.mutate(item.id) },
-                      ])}
-                    />
-                  ))
+                : filtered.map(renderItem)
               }
             </View>
           ) : (
-            zones.length === 0 ? (
-              <View style={styles.empty}>
-                <Text style={{ fontSize: 40, marginBottom: 16 }}>📦</Text>
-                <Text style={styles.emptyTitle}>La despensa está vacía</Text>
-                <Text style={[styles.itemSub, { textAlign: 'center', marginTop: 8 }]}>Escanea tu primer producto para empezar</Text>
-                <TouchableOpacity onPress={() => router.push('/scan')} style={[styles.scanBtn, { marginTop: 24 }]}>
-                  <Text style={styles.scanBtnText}>📷 Escanear producto</Text>
+            <>
+              {/* Gestión de zonas */}
+              <View style={[styles.row, { marginBottom: 16 }]}>
+                <Text style={styles.sectionTitle}>Zonas de la despensa</Text>
+                <TouchableOpacity onPress={() => setShowCreateZone(true)} style={styles.addZoneBtn}>
+                  <Text style={styles.addZoneBtnText}>＋ Nueva zona</Text>
                 </TouchableOpacity>
               </View>
-            ) : (
-              zones.map(zone => (
-                <View key={zone.id} style={{ marginBottom: 24 }}>
-                  <View style={[styles.row, { gap: 8, marginBottom: 12 }]}>
-                    <Text style={{ fontSize: 18 }}>{zone.icon}</Text>
-                    <Text style={styles.zoneName}>{zone.name}</Text>
-                    <Text style={styles.itemSub}>({zone.items.length})</Text>
-                  </View>
-                  {zone.items.map(item => (
-                    <ItemCard
-                      key={item.id} item={item}
-                      onConsume={() => consume.mutate(item.id)}
-                      onDiscard={() => Alert.alert('Descartar', `¿Descartar ${item.name}?`, [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Descartar', style: 'destructive', onPress: () => discard.mutate(item.id) },
-                      ])}
-                    />
-                  ))}
+
+              {zones.length === 0 ? (
+                <View style={styles.empty}>
+                  <Text style={{ fontSize: 40, marginBottom: 16 }}>📦</Text>
+                  <Text style={styles.emptyTitle}>La despensa está vacía</Text>
+                  <Text style={[styles.itemSub, { textAlign: 'center', marginTop: 8 }]}>Escanea tu primer producto para empezar</Text>
+                  <TouchableOpacity onPress={() => router.push('/scan')} style={[styles.scanBtn, { marginTop: 24 }]}>
+                    <Text style={styles.scanBtnText}>📷 Escanear producto</Text>
+                  </TouchableOpacity>
                 </View>
-              ))
-            )
+              ) : (
+                zones.map(zone => (
+                  <View key={zone.id} style={{ marginBottom: 24 }}>
+                    <View style={[styles.row, { gap: 8, marginBottom: 12 }]}>
+                      <Text style={{ fontSize: 18 }}>{zone.icon}</Text>
+                      <Text style={styles.zoneName}>{zone.name}</Text>
+                      <Text style={styles.itemSub}>({zone.items.length})</Text>
+                    </View>
+                    {zone.items.map(renderItem)}
+                  </View>
+                ))
+              )}
+            </>
           )}
           <View style={{ height: 24 }} />
         </ScrollView>
       )}
+
+      <ZonePickerModal
+        visible={!!movingItem}
+        item={movingItem}
+        zones={realZones}
+        onClose={() => setMovingItem(null)}
+        onCreateNew={() => setShowCreateZone(true)}
+        onSelect={(toZoneId) => {
+          if (movingItem) move.mutate({ id: movingItem.id, toZoneId })
+        }}
+      />
+
+      <CreateZoneModal
+        visible={showCreateZone}
+        creating={createZone.isPending}
+        onClose={() => setShowCreateZone(false)}
+        onCreate={(data) => createZone.mutate({ ...data, position: realZones.length })}
+      />
     </View>
   )
 }
@@ -252,9 +431,41 @@ const styles = StyleSheet.create({
   expandedRow: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border },
   consumeBtn:  { flex: 1, backgroundColor: 'rgba(29,158,117,0.2)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' },
   consumeText: { color: theme.brand, fontSize: 14, fontWeight: '600' },
+  moveBtn:     { flex: 1, backgroundColor: 'rgba(74,144,226,0.15)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' },
+  moveText:    { color: '#4A90E2', fontSize: 14, fontWeight: '600' },
   discardBtn:  { flex: 1, backgroundColor: 'rgba(226,75,74,0.1)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' },
   discardText: { color: theme.danger, fontSize: 14, fontWeight: '600' },
   empty:       { alignItems: 'center', justifyContent: 'center', paddingVertical: 80 },
   emptyTitle:  { color: theme.text, fontSize: 18, fontWeight: '600', textAlign: 'center' },
   zoneName:    { color: theme.text, fontWeight: '700', fontSize: 16 },
+  sectionTitle: { color: theme.text, fontWeight: '800', fontSize: 16 },
+  addZoneBtn:  { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+  addZoneBtnText: { color: theme.brand, fontSize: 13, fontWeight: '700' },
+
+  // Modales
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalSheet:  { backgroundColor: theme.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 32 },
+  modalTitle:  { color: theme.text, fontSize: 18, fontWeight: '800', marginBottom: 16 },
+  modalCancelBtn: { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 16, paddingVertical: 14, alignItems: 'center', marginTop: 12 },
+  modalInput:  { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, fontSize: 16, marginBottom: 16 },
+
+  zoneOption:  { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: theme.border },
+  zoneOptionIcon: { fontSize: 20 },
+  zoneOptionName: { flex: 1, color: theme.text, fontSize: 15, fontWeight: '600' },
+  zoneOptionCurrent: { color: theme.brand, fontSize: 12, fontWeight: '700' },
+  newZoneBtn:  { paddingVertical: 14, alignItems: 'center' },
+  newZoneBtnText: { color: theme.brand, fontSize: 14, fontWeight: '700' },
+
+  manualLabel: { color: theme.muted, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 },
+  manualButtons: { flexDirection: 'row', gap: 12 },
+  cancelBtn:   { flex: 1, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
+  cancelBtnText: { color: theme.muted, fontWeight: '600' },
+  confirmBtn:  { flex: 2, backgroundColor: theme.brand, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
+  confirmBtnText: { color: '#fff', fontWeight: '700' },
+
+  tempRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  tempPill:    { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+  tempPillActive: { backgroundColor: theme.brand + '22', borderColor: theme.brand },
+  tempPillText: { color: theme.muted, fontSize: 13, fontWeight: '600' },
+  tempPillTextActive: { color: theme.brand },
 })
