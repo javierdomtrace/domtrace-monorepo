@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@/lib/api'
 import { useAuth } from '@/store/auth'
 import { theme } from '@/theme'
+import { useA11yTheme } from '@/lib/a11y'
 
 interface Message { role: 'user' | 'assistant'; content: string; id: string }
 
@@ -20,19 +21,25 @@ const QUICK_ACTIONS = [
 ]
 
 function TypingDots() {
+  const { reducedMotion } = useA11yTheme()
   const dot1 = useRef(new Animated.Value(0)).current
   const dot2 = useRef(new Animated.Value(0)).current
   const dot3 = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
+    // Si el usuario activó "Reducir animaciones" en Accesibilidad, los puntos
+    // se quedan estáticos (sin rebote) en lugar de animarse en bucle.
+    if (reducedMotion) return
     const anim = (d: Animated.Value, delay: number) =>
       Animated.loop(Animated.sequence([
         Animated.delay(delay),
         Animated.timing(d, { toValue: -4, duration: 300, useNativeDriver: true }),
         Animated.timing(d, { toValue: 0,  duration: 300, useNativeDriver: true }),
       ]))
-    Animated.parallel([anim(dot1, 0), anim(dot2, 150), anim(dot3, 300)]).start()
-  }, [])
+    const a = Animated.parallel([anim(dot1, 0), anim(dot2, 150), anim(dot3, 300)])
+    a.start()
+    return () => a.stop()
+  }, [reducedMotion])
 
   return (
     <View style={styles.dotsRow}>

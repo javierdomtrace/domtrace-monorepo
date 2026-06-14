@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuth } from '@/store/auth'
 import { api } from '@/lib/api'
 import { theme } from '@/theme'
+import { useA11y, FONT_SCALE, type FontSize as A11yFontSize, type A11yMode } from '@/store/accessibility'
+import { useA11yTheme } from '@/lib/a11y'
 
 // ── Constantes (mismas que el panel web) ──────────────────────────────
 const ALLERGEN_LABELS: Record<string, string> = {
@@ -30,6 +32,18 @@ const TEXT_SIZE_OPTS = [
   { key: 'NORMAL', label: 'Normal' },
   { key: 'LARGE', label: 'Grande' },
   { key: 'XLARGE', label: 'Muy grande' },
+]
+
+// Conversión entre el formato del perfil (API) y el del store global de accesibilidad
+const FS_API_TO_STORE: Record<string, A11yFontSize> = { NORMAL: 'normal', LARGE: 'large', XLARGE: 'xlarge' }
+const FS_STORE_TO_API: Record<A11yFontSize, string> = { normal: 'NORMAL', large: 'LARGE', xlarge: 'XLARGE' }
+
+// Perfiles rápidos de discapacidad — mismos 4 perfiles que el panel web
+const A11Y_PROFILES: { key: A11yMode; icon: string; label: string; desc: string }[] = [
+  { key: 'visual',    icon: '👁️', label: 'Visión reducida',    desc: 'Alto contraste + texto muy grande' },
+  { key: 'motor',     icon: '✋', label: 'Movilidad reducida',  desc: 'Animaciones reducidas + texto grande' },
+  { key: 'cognitive', icon: '🧠', label: 'Cognitiva',           desc: 'Interfaz simplificada + texto grande' },
+  { key: 'deaf',      icon: '🔊', label: 'Audición',            desc: 'Énfasis visual en alertas' },
 ]
 
 // Patrones de vibración (igual que en el panel web)
@@ -100,17 +114,21 @@ function calcKcal(peso: number, altura: number, edad: number, actividad: string,
 }
 
 // ── Componentes de UI reutilizables ───────────────────────────────────
+// Aplican el tamaño de texto y el alto contraste del store global de
+// accesibilidad, asi que toda la pantalla de Ajustes se adapta al instante.
 function Section({ title, children }: { title: string; children: ReactNode }) {
+  const { theme: t, scale } = useA11yTheme()
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={[styles.section, { backgroundColor: t.surface, borderColor: t.border }]}>
+      <Text style={[styles.sectionTitle, { color: t.text, fontSize: scale(16) }]}>{title}</Text>
       {children}
     </View>
   )
 }
 
 function FieldLabel({ children }: { children: ReactNode }) {
-  return <Text style={styles.fieldLabel}>{children}</Text>
+  const { theme: t, scale } = useA11yTheme()
+  return <Text style={[styles.fieldLabel, { color: t.muted, fontSize: scale(12) }]}>{children}</Text>
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -126,16 +144,22 @@ function Input({ value, onChangeText, editing, placeholder, keyboardType, multil
   value: string; onChangeText: (v: string) => void; editing: boolean
   placeholder?: string; keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad'; multiline?: boolean
 }) {
+  const { theme: t, scale } = useA11yTheme()
   return (
     <TextInput
       value={value}
       onChangeText={onChangeText}
       editable={editing}
       placeholder={placeholder}
-      placeholderTextColor={theme.muted}
+      placeholderTextColor={t.muted}
       keyboardType={keyboardType ?? 'default'}
       multiline={multiline}
-      style={[styles.input, !editing && styles.inputDisabled, multiline && { minHeight: 70, textAlignVertical: 'top' }]}
+      style={[
+        styles.input,
+        { backgroundColor: t.bg, borderColor: t.border, color: t.text, fontSize: scale(14) },
+        !editing && styles.inputDisabled,
+        multiline && { minHeight: 70, textAlignVertical: 'top' },
+      ]}
     />
   )
 }
@@ -143,10 +167,15 @@ function Input({ value, onChangeText, editing, placeholder, keyboardType, multil
 function Pill({ label, active, onPress, disabled, color }: {
   label: string; active: boolean; onPress: () => void; disabled?: boolean; color?: string
 }) {
-  const c = color ?? theme.brand
+  const { theme: t, scale } = useA11yTheme()
+  const c = color ?? t.brand
   return (
-    <TouchableOpacity disabled={disabled} onPress={onPress} style={[styles.pill, active && { borderColor: c, backgroundColor: c + '22' }]}>
-      <Text style={[styles.pillText, active && { color: c, fontWeight: '700' }]}>{label}</Text>
+    <TouchableOpacity disabled={disabled} onPress={onPress} style={[
+      styles.pill,
+      { borderColor: t.border, backgroundColor: t.bg },
+      active && { borderColor: c, backgroundColor: c + '22' },
+    ]}>
+      <Text style={[styles.pillText, { color: t.muted, fontSize: scale(13) }, active && { color: c, fontWeight: '700' }]}>{label}</Text>
     </TouchableOpacity>
   )
 }
@@ -154,10 +183,15 @@ function Pill({ label, active, onPress, disabled, color }: {
 function OptionCard({ label, desc, active, onPress, disabled }: {
   label: string; desc?: string; active: boolean; onPress: () => void; disabled?: boolean
 }) {
+  const { theme: t, scale } = useA11yTheme()
   return (
-    <TouchableOpacity disabled={disabled} onPress={onPress} style={[styles.optionCard, active && styles.optionCardActive]}>
-      <Text style={[styles.optionLabel, active && { color: theme.brand }]}>{label}</Text>
-      {desc ? <Text style={styles.optionDesc}>{desc}</Text> : null}
+    <TouchableOpacity disabled={disabled} onPress={onPress} style={[
+      styles.optionCard,
+      { borderColor: t.border, backgroundColor: t.bg },
+      active && { borderColor: t.brand, backgroundColor: 'rgba(29,158,117,0.1)' },
+    ]}>
+      <Text style={[styles.optionLabel, { color: t.text, fontSize: scale(14) }, active && { color: t.brand }]}>{label}</Text>
+      {desc ? <Text style={[styles.optionDesc, { color: t.muted, fontSize: scale(12) }]}>{desc}</Text> : null}
     </TouchableOpacity>
   )
 }
@@ -165,19 +199,21 @@ function OptionCard({ label, desc, active, onPress, disabled }: {
 function ToggleRow({ label, value, onValueChange, disabled }: {
   label: string; value: boolean; onValueChange: (v: boolean) => void; disabled?: boolean
 }) {
+  const { theme: t, scale } = useA11yTheme()
   return (
     <View style={styles.toggleRow}>
-      <Text style={styles.toggleLabel}>{label}</Text>
+      <Text style={[styles.toggleLabel, { color: t.text, fontSize: scale(14) }]}>{label}</Text>
       <Switch value={value} onValueChange={onValueChange} disabled={disabled}
-        trackColor={{ false: theme.border, true: theme.brand }} thumbColor="#fff" />
+        trackColor={{ false: t.border, true: t.brand }} thumbColor="#fff" />
     </View>
   )
 }
 
 function CollapsedAdd({ label, onPress }: { label: string; onPress: () => void }) {
+  const { theme: t, scale } = useA11yTheme()
   return (
-    <TouchableOpacity onPress={onPress} style={styles.collapsedAdd}>
-      <Text style={styles.collapsedAddText}>＋ {label}</Text>
+    <TouchableOpacity onPress={onPress} style={[styles.collapsedAdd, { borderColor: t.border }]}>
+      <Text style={[styles.collapsedAddText, { color: t.brand, fontSize: scale(13) }]}>＋ {label}</Text>
     </TouchableOpacity>
   )
 }
@@ -243,10 +279,37 @@ export default function SettingsScreen() {
   const [alergiasPersonalizadas, setAlergiasPersonalizadas] = useState<string[]>([])
   const [newAllergen, setNewAllergen] = useState('')
 
-  // Accesibilidad
+  // Accesibilidad — el store global aplica los cambios al instante en toda la app
   const [textSize, setTextSize] = useState('NORMAL')
   const [highContrast, setHighContrast] = useState(false)
   const [reduceMotion, setReduceMotion] = useState(false)
+  const a11y = useA11y()
+  const a11yTheme = useA11yTheme()
+
+  // Cambia el tamano de texto: actualiza el formulario y aplica el cambio ya mismo
+  const onSetTextSize = (key: string) => {
+    setTextSize(key)
+    a11y.setFontSize(FS_API_TO_STORE[key] ?? 'normal')
+  }
+  // Alterna alto contraste: actualiza el formulario y aplica el cambio ya mismo
+  const onSetHighContrast = (v: boolean) => {
+    setHighContrast(v)
+    if (a11y.highContrast !== v) a11y.toggleHighContrast()
+  }
+  // Alterna reducir animaciones: actualiza el formulario y aplica el cambio ya mismo
+  const onSetReduceMotion = (v: boolean) => {
+    setReduceMotion(v)
+    if (a11y.reducedMotion !== v) a11y.toggleReducedMotion()
+  }
+  // Selecciona un perfil rapido de discapacidad (aplica varios ajustes a la vez)
+  const onSetA11yProfile = (mode: A11yMode) => {
+    const next: A11yMode = a11y.activeMode === mode ? 'none' : mode
+    a11y.setMode(next)
+    const s = useA11y.getState()
+    setHighContrast(s.highContrast)
+    setTextSize(FS_STORE_TO_API[s.fontSize])
+    setReduceMotion(s.reducedMotion)
+  }
 
   // Mis domicilios
   const [showAddHousehold, setShowAddHousehold] = useState(false)
@@ -292,6 +355,19 @@ export default function SettingsScreen() {
     setTextSize(u.textSize ?? 'NORMAL')
     setHighContrast(u.highContrast ?? false)
     setReduceMotion(u.reduceMotion ?? false)
+
+    // Primera vez en este dispositivo: si el store local de accesibilidad sigue
+    // en sus valores por defecto, aplicamos las preferencias guardadas en el
+    // perfil para que la app se adapte tambien aqui.
+    const a11yState = useA11y.getState()
+    const a11yIsDefault = a11yState.activeMode === 'none' && a11yState.fontSize === 'normal'
+      && !a11yState.highContrast && !a11yState.reducedMotion
+    if (a11yIsDefault) {
+      if (u.highContrast) a11yState.toggleHighContrast()
+      if (u.reduceMotion) a11yState.toggleReducedMotion()
+      const mapped = FS_API_TO_STORE[u.textSize ?? 'NORMAL']
+      if (mapped && mapped !== 'normal') a11yState.setFontSize(mapped)
+    }
 
     if (u.pesoKg || u.alturaCm || u.edadAnos) {
       setShowNutrition(true)
@@ -475,9 +551,9 @@ export default function SettingsScreen() {
   ])
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScrollView style={[styles.screen, { backgroundColor: a11yTheme.theme.bg }]} contentContainerStyle={{ paddingBottom: 40 }}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.title}>Ajustes</Text>
+        <Text style={[styles.title, { color: a11yTheme.theme.text, fontSize: a11yTheme.scale(24) }]}>Ajustes</Text>
         <TouchableOpacity
           onPress={() => editing ? saveProfile.mutate() : setEditing(true)}
           disabled={saveProfile.isPending}
@@ -821,17 +897,58 @@ export default function SettingsScreen() {
       {/* 7 — Accesibilidad */}
       <Section title="♿ Accesibilidad">
         <Text style={styles.mutedText}>
-          Estas opciones hacen la experiencia más cómoda según tus necesidades.
+          Estas opciones cambian la app al instante en todas las pantallas, no solo aquí. Se guardan en este dispositivo aunque no pulses "Guardar".
         </Text>
+
+        <Field label="Perfil rápido según tu discapacidad">
+          <View style={a11yStyles.profileGrid}>
+            {A11Y_PROFILES.map(p => {
+              const active = a11y.activeMode === p.key
+              return (
+                <TouchableOpacity
+                  key={p.key}
+                  onPress={() => onSetA11yProfile(p.key)}
+                  style={[
+                    a11yStyles.profileBtn,
+                    { borderColor: a11yTheme.theme.border, backgroundColor: a11yTheme.theme.bg },
+                    active && { borderColor: a11yTheme.theme.brand, backgroundColor: 'rgba(29,158,117,0.12)' },
+                  ]}
+                >
+                  <Text style={{ fontSize: 22 }}>{p.icon}</Text>
+                  <Text style={[a11yStyles.profileLabel, { color: active ? a11yTheme.theme.brand : a11yTheme.theme.text, fontSize: a11yTheme.scale(12) }]}>{p.label}</Text>
+                  <Text style={[a11yStyles.profileDesc, { color: a11yTheme.theme.muted, fontSize: a11yTheme.scale(11) }]}>{p.desc}</Text>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+          {a11y.activeMode !== 'none' && (
+            <TouchableOpacity onPress={() => onSetA11yProfile(a11y.activeMode)} style={{ marginTop: 8, alignSelf: 'flex-start' }}>
+              <Text style={[styles.mutedText, { textDecorationLine: 'underline' }]}>Quitar perfil activo</Text>
+            </TouchableOpacity>
+          )}
+        </Field>
+
         <Field label="Tamaño del texto">
           <View style={styles.pillRow}>
             {TEXT_SIZE_OPTS.map(o => (
-              <Pill key={o.key} label={o.label} active={textSize === o.key} disabled={!editing} onPress={() => setTextSize(o.key)} />
+              <Pill key={o.key} label={o.label} active={textSize === o.key} onPress={() => onSetTextSize(o.key)} />
             ))}
           </View>
         </Field>
-        <ToggleRow label="Alto contraste" value={highContrast} onValueChange={setHighContrast} disabled={!editing} />
-        <ToggleRow label="Reducir animaciones" value={reduceMotion} onValueChange={setReduceMotion} disabled={!editing} />
+        <ToggleRow label="Alto contraste" value={highContrast} onValueChange={onSetHighContrast} />
+        <ToggleRow label="Reducir animaciones" value={reduceMotion} onValueChange={onSetReduceMotion} />
+
+        {/* Vista previa en vivo de los ajustes activos */}
+        <View style={[a11yStyles.previewBox, { backgroundColor: a11yTheme.theme.bg, borderColor: a11yTheme.theme.border }]}>
+          <Text style={{ color: a11yTheme.theme.text, fontSize: a11yTheme.scale(14), fontWeight: '700' }}>
+            Así se ve el texto con tus ajustes
+          </Text>
+          <Text style={{ color: a11yTheme.theme.muted, fontSize: a11yTheme.scale(12), marginTop: 4 }}>
+            {a11yTheme.highContrast ? 'Alto contraste activado · ' : ''}
+            {a11yTheme.reducedMotion ? 'Animaciones reducidas · ' : ''}
+            Tamaño x{FONT_SCALE[a11y.fontSize].toFixed(2)}
+          </Text>
+        </View>
 
         <Field label="Patrones de vibración">
           <Text style={[styles.mutedText, { marginBottom: 8 }]}>
@@ -854,7 +971,7 @@ export default function SettingsScreen() {
         <View style={styles.onceBox}>
           <Text style={styles.onceTitle}>🎯 Objetivo: certificación ONCE</Text>
           <Text style={styles.mutedText}>
-            Estamos trabajando para que Stoqly sea totalmente accesible según los estándares de la ONCE, incluyendo compatibilidad con lectores de pantalla (VoiceOver, TalkBack), navegación completa y estos patrones de vibración para usuarios con discapacidad visual.
+            El alto contraste, el tamaño de texto y la reducción de animaciones ya se aplican en toda la app. Seguimos trabajando en la compatibilidad completa con lectores de pantalla (VoiceOver, TalkBack) y lectura en voz alta.
           </Text>
         </View>
       </Section>
@@ -939,6 +1056,14 @@ export default function SettingsScreen() {
     </ScrollView>
   )
 }
+
+const a11yStyles = StyleSheet.create({
+  profileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  profileBtn: { width: '48%', borderWidth: 1.5, borderRadius: 12, padding: 10, alignItems: 'center', gap: 4 },
+  profileLabel: { fontWeight: '700', textAlign: 'center' },
+  profileDesc: { textAlign: 'center' },
+  previewBox: { marginTop: 10, marginBottom: 4, borderWidth: 1, borderRadius: 12, padding: 12 },
+})
 
 const styles = StyleSheet.create({
   screen:       { flex: 1, backgroundColor: theme.bg },
