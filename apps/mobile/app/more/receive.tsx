@@ -8,6 +8,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Haptics from 'expo-haptics'
 import { api } from '@/lib/api'
 import { theme } from '@/theme'
+import { parseGS1 } from '@/lib/gs1'
 import { ScreenHeader, Section, Pill, EmptyState, styles as ui } from '@/components/ui'
 
 interface Zone { id: string; name: string; icon: string }
@@ -25,6 +26,8 @@ interface QueueItem {
   tempId: string
   barcode?: string
   name: string
+  /** true cuando el código no se identificó en ninguna base de datos y el nombre lo pone el usuario */
+  needsName?: boolean
   quantity: number
   unit: string
   suggestion?: Suggestion
@@ -76,14 +79,25 @@ export default function ReceiveScreen() {
   const pantryItems: any[] = Array.isArray(pantryData) ? pantryData : (pantryData?.data ?? [])
 
   const addByBarcode = useCallback(async (code: string) => {
-    const clean = code.replace(/\D/g, '')
+    // Si es un GS1 DataMatrix/QR (GTIN + lote + caducidad...) extraemos esos
+    // datos y usamos el GTIN para buscar el producto; si no, tratamos `code`
+    // como un EAN/UPC plano.
+    const gs1 = parseGS1(code)
+    const clean = (gs1?.ean ?? gs1?.gtin ?? code).replace(/\D/g, '')
     if (!clean || clean.length < 8) return
     setBarcodeInput('')
     const tempId = uid()
-    setQueue(q => [...q, { tempId, barcode: clean, name: 'Buscando...', quantity: 1, unit: 'u', action: 'new' }])
+    setQueue(q => [...q, {
+      tempId, barcode: clean, name: 'Buscando...', quantity: 1, unit: 'u', action: 'new',
+      lotNumber: gs1?.lotNumber, expiryDate: gs1?.expiryDate,
+    }])
     const info = await lookupOFF(clean)
-    const finalName = info?.name ?? `Producto ${clean}`
-    setQueue(q => q.map(item => item.tempId === tempId ? { ...item, name: finalName } : item))
+    if (info?.name) {
+      setQueue(q => q.map(item => item.tempId === tempId ? { ...item, name: info.name } : item))
+    } else {
+      // No inventamos "Producto {ean}": pedimos el nombre al usuario en la propia tarjeta
+      setQueue(q => q.map(item => item.tempId === tempId ? { ...item, name: '', needsName: true } : item))
+    }
   }, [])
 
   const addByName = useCallback(() => {
@@ -158,6 +172,10 @@ Para CADA producto (por su índice numérico exacto del 0 al ${queue.length - 1}
 
   const saveItem = useCallback(async (item: QueueItem) => {
     if (item.saving || item.action === 'skip') return
+    if (!item.name.trim()) {
+      Alert.alert('Falta el nombre', 'Ponle un nombre al producto antes de guardarlo.')
+      return
+    }
     setQueue(q => q.map(qi => qi.tempId === item.tempId ? { ...qi, saving: true } : qi))
     try {
       const sug = item.suggestion
@@ -188,6 +206,11 @@ Para CADA producto (por su índice numérico exacto del 0 al ${queue.length - 1}
   const saveAll = async () => {
     const toSave = queue.filter(i => !i.saving && i.action !== 'skip')
     if (toSave.length === 0) return
+    const missingName = toSave.find(i => !i.name.trim())
+    if (missingName) {
+      Alert.alert('Faltan nombres', 'Algunos productos no tienen nombre. Ponles un nombre antes de guardar.')
+      return
+    }
     setSaving(true)
     for (const item of toSave) {
       await saveItem(item)
@@ -224,7 +247,7 @@ Para CADA producto (por su índice numérico exacto del 0 al ${queue.length - 1}
               <CameraView
                 style={{ width: '100%', height: 220 }}
                 facing="back"
-                barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'code128', 'qr'] }}
+                barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'code128', 'qr', 'datamatrix'] }}
                 onBarcodeScanned={handleBarcode}
               />
               <View style={styles.cameraHint}>
@@ -341,7 +364,17 @@ function QueueCard({ item, zones, expanded, onToggle, onUpdate, onRemove, onSave
           <Text style={{ fontSize: 16 }}>{item.saving ? '⏳' : isFresco ? '🌱' : '📦'}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.queueName} numberOfLines={1}>{item.name}</Text>
+          {item.needsName ? (
+            <TextInput
+              value={item.name}
+              onChangeText={t => onUpdate({ name: t })}
+              placeholder="Sin identificar — ponle un nombre"
+              placeholderTextColor={theme.muted}
+              style={styles.queueNameInput}
+            />
+          ) : (
+            <Text style={styles.queueName} numberOfLines={1}>{item.name}</Text>
+          )}
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
             {sug?.zonaSugerida ? <Text style={styles.tagTeal}>📍 {sug.zonaSugerida}</Text> : null}
             {sug?.consolidarCon ? <Text style={styles.tagWarn}>⚠️ Ya tienes: {sug.consolidarCon}</Text> : null}
@@ -450,6 +483,7 @@ const styles = StyleSheet.create({
   queueRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
   queueIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(78,205,196,0.08)', alignItems: 'center', justifyContent: 'center' },
   queueName: { color: theme.text, fontSize: 14, fontWeight: '600' },
+  queueNameInput: { color: theme.text, fontSize: 14, fontWeight: '600', borderBottomWidth: 1, borderBottomColor: theme.brand, paddingVertical: 2 },
   tagTeal: { color: theme.teal, fontSize: 11 },
   tagWarn: { color: theme.warn, fontSize: 11 },
   tagGreen: { color: '#3B6D11', fontSize: 11 },

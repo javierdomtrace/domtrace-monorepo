@@ -142,7 +142,7 @@ export default function SupplementsScreen() {
             {permission?.granted ? (
               <CameraView
                 style={{ width: '100%', height: 240 }}
-                barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
+                barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'qr', 'datamatrix'] }}
                 onBarcodeScanned={(res) => onScan(res.data)}
               />
             ) : (

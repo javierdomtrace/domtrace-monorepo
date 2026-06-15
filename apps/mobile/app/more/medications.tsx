@@ -245,7 +245,7 @@ export default function MedicationsScreen() {
               <View style={styles.cameraBox}>
                 <CameraView
                   style={{ flex: 1 }}
-                  barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
+                  barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'qr', 'datamatrix'] }}
                   onBarcodeScanned={(r) => onScan(r.data)}
                 />
               </View>

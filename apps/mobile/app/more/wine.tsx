@@ -261,7 +261,7 @@ export default function WineScreen() {
         {showScanner && (
           <View style={[ui.card, { padding: 0, overflow: 'hidden' }]}>
             {permission?.granted ? (
-              <CameraView style={{ width: '100%', height: 240 }} barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }} onBarcodeScanned={(res) => onScan(res.data)} />
+              <CameraView style={{ width: '100%', height: 240 }} barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'qr', 'datamatrix'] }} onBarcodeScanned={(res) => onScan(res.data)} />
             ) : (
               <View style={{ padding: 20, alignItems: 'center' }}><Text style={{ color: theme.muted, fontSize: 13 }}>Se necesita acceso a la cámara</Text></View>
             )}
