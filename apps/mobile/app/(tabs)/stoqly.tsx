@@ -1,10 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Animated, StyleSheet,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Animated, StyleSheet, Alert,
 } from 'react-native'
 import * as Haptics from 'expo-haptics'
 import * as Speech from 'expo-speech'
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from 'expo-speech-recognition'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@/lib/api'
 import { useAuth } from '@/store/auth'
@@ -64,6 +68,7 @@ export default function StoqlyScreen() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [speaking, setSpeaking] = useState(false)
+  const [listening, setListening] = useState(false)
 
   const scrollToBottom = () => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)
 
@@ -110,6 +115,46 @@ export default function StoqlyScreen() {
       language: 'es-ES', rate: 0.95, pitch: 1.05,
       onDone: () => setSpeaking(false),
       onError: () => setSpeaking(false),
+    })
+  }
+
+  // --- Reconocimiento de voz (dictado) ---
+  useSpeechRecognitionEvent('start', () => setListening(true))
+  useSpeechRecognitionEvent('end', () => setListening(false))
+  useSpeechRecognitionEvent('result', (event) => {
+    const transcript = event.results[0]?.transcript ?? ''
+    setInput(transcript)
+    if (event.isFinal && transcript.trim()) {
+      setListening(false)
+      send(transcript)
+    }
+  })
+  useSpeechRecognitionEvent('error', (event) => {
+    setListening(false)
+    if (event.error !== 'no-speech' && event.error !== 'aborted') {
+      Alert.alert('Error de voz', event.message || 'No se pudo reconocer el audio.')
+    }
+  })
+
+  const toggleListening = async () => {
+    if (listening) {
+      ExpoSpeechRecognitionModule.stop()
+      return
+    }
+    const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync()
+    if (!perm.granted) {
+      Alert.alert(
+        'Permiso necesario',
+        'Activa el micrófono y el reconocimiento de voz en los ajustes del sistema para hablar con tu asistente.',
+      )
+      return
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    ExpoSpeechRecognitionModule.start({
+      lang: 'es-ES',
+      interimResults: true,
+      continuous: false,
+      addsPunctuation: true,
     })
   }
 
@@ -202,10 +247,24 @@ export default function StoqlyScreen() {
 
       {/* Input */}
       <View style={styles.inputRow}>
+        <TouchableOpacity
+          onPress={toggleListening}
+          accessibilityRole="button"
+          accessibilityLabel={listening ? 'Detener dictado por voz' : 'Hablar con Stoqly por voz'}
+          accessibilityHint="Mantén pulsado o toca para dictar tu mensaje por voz"
+          accessibilityState={{ selected: listening }}
+          style={[
+            styles.micBtn,
+            listening && styles.micBtnActive,
+            { borderWidth: 1, borderColor: listening ? theme.danger : theme.borderStrong },
+          ]}
+        >
+          <Text style={{ fontSize: 18 }}>{listening ? '⏹️' : '🎤'}</Text>
+        </TouchableOpacity>
         <View style={styles.inputWrap}>
           <TextInput
             style={styles.textInput}
-            placeholder="Escríbele a Stoqly..."
+            placeholder={listening ? 'Escuchando...' : 'Escríbele a Stoqly...'}
             placeholderTextColor={theme.muted}
             value={input}
             onChangeText={setInput}
@@ -260,6 +319,8 @@ const styles = StyleSheet.create({
   quickBtn:        { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 10 },
   quickText:       { color: theme.text, fontSize: 14 },
   inputRow:        { paddingHorizontal: 16, paddingBottom: 16, flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
+  micBtn:          { width: 48, height: 48, backgroundColor: theme.surface, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  micBtnActive:    { backgroundColor: 'rgba(226,75,74,0.2)' },
   inputWrap:       { flex: 1, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, minHeight: 48, maxHeight: 120 },
   textInput:       { color: theme.text, fontSize: 14 },
   sendBtn:         { width: 48, height: 48, backgroundColor: theme.brand, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

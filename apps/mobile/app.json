@@ -9,7 +9,9 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.stoqly.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Stoqly necesita la cámara para escanear códigos de barras de tus productos."
+        "NSCameraUsageDescription": "Stoqly necesita la cámara para escanear códigos de barras de tus productos.",
+        "NSMicrophoneUsageDescription": "Stoqly necesita el micrófono para que puedas hablar con tu asistente por voz.",
+        "NSSpeechRecognitionUsageDescription": "Stoqly necesita reconocimiento de voz para entender lo que le dices a tu asistente."
       }
     },
     "android": {
@@ -24,7 +26,15 @@
     "plugins": [
       "expo-router",
       "expo-camera",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Stoqly necesita el micrófono para que puedas hablar con tu asistente por voz.",
+          "speechRecognitionPermission": "Stoqly necesita reconocimiento de voz para entender lo que le dices a tu asistente.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+        }
+      ]
     ],
     "scheme": "stoqly",
     "web": {
