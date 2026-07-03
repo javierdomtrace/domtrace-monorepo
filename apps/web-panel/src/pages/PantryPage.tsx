@@ -2,11 +2,12 @@ import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { useAuth } from '../store/auth'
-import { Search, Plus, Trash2, CheckCircle, ScanLine, Pencil, Heart } from 'lucide-react'
+import { Search, Plus, Trash2, CheckCircle, ScanLine, Pencil, Heart, Info } from 'lucide-react'
 import { AddItemModal } from '../components/AddItemModal'
 import { BarcodeScanner } from '../components/BarcodeScanner'
 import { EditItemModal } from '../components/EditItemModal'
 import { ProductInfoPanel } from '../components/ProductInfoPanel'
+import { ProductDetailModal } from '../components/ProductDetailModal'
 import { Leaf } from 'lucide-react'
 
 interface Item {
@@ -27,6 +28,7 @@ export function PantryPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [editItem, setEditItem] = useState<Item | null>(null)
+  const [detailItemId, setDetailItemId] = useState<string | null>(null)
 
   const { data: zonesData } = useQuery<Zone[]>({
     queryKey: ['zones', activeHouseholdId],
@@ -86,6 +88,7 @@ export function PantryPage() {
       {showAddModal && <AddItemModal onClose={() => setShowAddModal(false)} />}
       {showScanner && <BarcodeScanner onClose={() => setShowScanner(false)} />}
       {editItem && <EditItemModal item={editItem} onClose={() => setEditItem(null)} />}
+      {detailItemId && <ProductDetailModal itemId={detailItemId} onClose={() => setDetailItemId(null)} />}
 
       {/* Filtros por zona */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -135,7 +138,7 @@ export function PantryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map(item => <ItemRow key={item.id} item={item} onConsume={() => consume.mutate(item.id)} onDiscard={() => discard.mutate(item.id)} onEdit={() => setEditItem(item)} onDonate={() => donate.mutate(item.id)} />)}
+                  {items.map(item => <ItemRow key={item.id} item={item} onConsume={() => consume.mutate(item.id)} onDiscard={() => discard.mutate(item.id)} onEdit={() => setEditItem(item)} onDonate={() => donate.mutate(item.id)} onDetail={() => setDetailItemId(item.id)} />)}
                 </tbody>
               </table>
             </div>
@@ -176,7 +179,7 @@ function FreshnessBar({ item }: { item: Item }) {
   )
 }
 
-function ItemRow({ item, onConsume, onDiscard, onEdit, onDonate }: { item: Item; onConsume: () => void; onDiscard: () => void; onEdit: () => void; onDonate: () => void }) {
+function ItemRow({ item, onConsume, onDiscard, onEdit, onDonate, onDetail }: { item: Item; onConsume: () => void; onDiscard: () => void; onEdit: () => void; onDonate: () => void; onDetail: () => void }) {
   const days = item.daysUntilExpiry
   const isFresco = !!item.tipoFresco
 
@@ -229,6 +232,7 @@ function ItemRow({ item, onConsume, onDiscard, onEdit, onDonate }: { item: Item;
       </td>
       <td style={{ padding: '12px 16px' }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <ActionBtn onClick={onDetail} icon={<Info size={14} />} label="Detalle" color="var(--muted)" />
           <ActionBtn onClick={onEdit} icon={<Pencil size={14} />} label="Editar" color="#7F77DD" />
           <ActionBtn onClick={onConsume} icon={<CheckCircle size={14} />} label="Consumir" color="var(--teal)" />
           {!item.pendienteDonacion
