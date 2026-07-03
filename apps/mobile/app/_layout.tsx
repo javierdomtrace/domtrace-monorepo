@@ -44,6 +44,8 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.bg } }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="product/[id]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="scan" />
         </Stack>
       </QueryClientProvider>
     </SafeAreaProvider>
@@ -52,9 +54,10 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   loader: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: theme.bg,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 999,
   },
 })
