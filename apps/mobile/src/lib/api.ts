@@ -1,7 +1,20 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Constants from 'expo-constants'
 
-const BASE = (Constants.expoConfig?.extra?.apiUrl as string) ?? 'http://localhost:3000/v1'
+// En Expo Go en un dispositivo físico, "localhost" apunta al teléfono, no al PC.
+// Constants.expoConfig.hostUri contiene "192.168.x.x:8081" (IP del PC con Metro).
+// Usamos esa IP para llegar al backend en el puerto 3000.
+function getBaseUrl(): string {
+  const explicit = Constants.expoConfig?.extra?.apiUrl as string | undefined
+  if (explicit) return explicit
+  const hostUri = Constants.expoConfig?.hostUri as string | undefined
+  if (hostUri) {
+    const host = hostUri.split(':')[0]  // quitar el puerto de Metro
+    return `http://${host}:3000/v1`
+  }
+  return 'http://localhost:3000/v1'
+}
+const BASE = getBaseUrl()
 
 export async function getToken(): Promise<string | null> {
   return AsyncStorage.getItem('stoqly_token')
