@@ -5,11 +5,29 @@ import {
 } from 'react-native'
 import * as Haptics from 'expo-haptics'
 import * as Speech from 'expo-speech'
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from 'expo-speech-recognition'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+// ── expo-speech-recognition requiere módulo nativo (no disponible en Expo Go).
+// Se carga con require() + guard para que la pantalla no rompa en Expo Go.
+let ExpoSpeechRecognitionModule: {
+  start: (opts?: any) => void
+  stop: () => void
+  requestPermissionsAsync: () => Promise<{ granted: boolean }>
+} = {
+  start: () => {},
+  stop: () => {},
+  requestPermissionsAsync: async () => ({ granted: false }),
+}
+let useSpeechRecognitionEvent: (event: string, cb: (e?: any) => void) => void = () => {}
+let sttSupported = false
+try {
+  const stt = require('expo-speech-recognition')
+  ExpoSpeechRecognitionModule = stt.ExpoSpeechRecognitionModule
+  useSpeechRecognitionEvent = stt.useSpeechRecognitionEvent
+  sttSupported = true
+} catch (_) {
+  // Expo Go: módulo nativo no disponible — micrófono desactivado
+}
 import { api } from '@/lib/api'
 import { useAuth } from '@/store/auth'
 import { theme } from '@/theme'
@@ -137,6 +155,10 @@ export default function StoqlyScreen() {
   })
 
   const toggleListening = async () => {
+    if (!sttSupported) {
+      Alert.alert('No disponible en Expo Go', 'El reconocimiento de voz requiere una build de desarrollo o producción.')
+      return
+    }
     if (listening) {
       ExpoSpeechRecognitionModule.stop()
       return
