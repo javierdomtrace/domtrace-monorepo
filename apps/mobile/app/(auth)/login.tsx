@@ -88,6 +88,13 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Forgot password */}
+          <TouchableOpacity onPress={() => {}} style={styles.forgotRow}>
+            <Link href="/(auth)/forgot-password">
+              <Text style={styles.linkMuted}>¿Olvidaste tu contraseña?</Text>
+            </Link>
+          </TouchableOpacity>
+
           {/* Register link */}
           <View style={styles.linkRow}>
             <Text style={styles.linkMuted}>¿Sin cuenta? </Text>
@@ -129,7 +136,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16, alignItems: 'center', marginTop: 8,
   },
   btnText:   { color: '#fff', fontWeight: '700', fontSize: 16 },
-  linkRow:   { flexDirection: 'row', justifyContent: 'center', marginTop: 32 },
+  forgotRow: { alignItems: 'center', marginTop: 4 },
+  linkRow:   { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
   linkMuted: { color: theme.muted, fontSize: 14 },
   linkBrand: { color: theme.brand, fontSize: 14, fontWeight: '600' },
 })
